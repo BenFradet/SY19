@@ -1,4 +1,5 @@
 library(MASS)
+library(vegan)
 source('aftd.R')
 
 mutations <- read.table('mutations2.txt', header = F, row.names = 1)
@@ -86,6 +87,45 @@ dev.off()
 cat(pngnameKruskal, 'sauvegardee\n\n')
 
 # computes Shepard's diagrams
-shepardAftd <- Shepard(mutationsMatrix, aftd$points, k = 2)
-shepardSammon <- Shepard(mutationsMatrix, sammon$points, k = 2)
-shepardKruskal <- Shepard(mutationsMatrix, kruskal$points, k = 2)
+shepardAftd <- Shepard(dist(mutationsMatrix), aftd$points)
+shepardSammon <- Shepard(dist(mutationsMatrix), sammon$points)
+shepardKruskal <- Shepard(dist(mutationsMatrix), kruskal$points)
+
+pngnameShepardAftd <- 'shepardAftd.png'
+png(pngnameShepardAftd, width = 500, height = 500)
+plot(shepardAftd,
+     pch = '.',
+     xlab = 'Dissimilarite',
+     ylab = 'Distance',
+     xlim = range(shepardAftd$x),
+     ylim = range(shepardAftd$y))
+lines(shepardAftd$x, shepardAftd$yf,
+      type = 'S')
+dev.off()
+cat(pngnameShepardAftd, 'sauvegardee\n\n')
+
+pngnameShepardSammon <- 'shepardSammon.png'
+png(pngnameShepardSammon, width = 500, height = 500)
+plot(shepardSammon,
+     pch = '.',
+     xlab = 'Dissimilarite',
+     ylab = 'Distance',
+     xlim = range(shepardSammon$x),
+     ylim = range(shepardSammon$y))
+lines(shepardSammon$x, shepardSammon$yf,
+      type = 'S')
+dev.off()
+cat(pngnameShepardSammon, 'sauvegardee\n\n')
+
+pngnameShepardKruskal <- 'shepardKruskal.png'
+png(pngnameShepardKruskal, width = 500, height = 500)
+plot(shepardKruskal,
+     pch = '.',
+     xlab = 'Dissimilarite',
+     ylab = 'Distance',
+     xlim = range(shepardKruskal$x),
+     ylim = range(shepardKruskal$y))
+lines(shepardKruskal$x, shepardKruskal$yf,
+      type = 'S')
+dev.off()
+cat(pngnameShepardKruskal, 'sauvegardee\n\n')
