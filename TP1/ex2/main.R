@@ -1,5 +1,4 @@
 library(MASS)
-library(vegan)
 source('aftd.R')
 
 mutations <- read.table('mutations2.txt', header = F, row.names = 1)
@@ -26,8 +25,8 @@ plot(aftdHM$points[, 1], aftdHM$points[, 2],
      main = 'Representation de l AFTD des especes par notre methode',
      xlab = '',
      ylab = '',
-     xlim = c(-30, 70),
-     ylim = c(-50, 50))
+     xlim = range(aftdHM$points[, 1]),
+     ylim = range(aftdHM$points[, 2]))
 text(aftdHM$points[, 1], aftdHM$points[, 2],
      rownames(mutations),
      cex = 0.8)
@@ -41,8 +40,8 @@ plot(aftd$points[, 1], aftd$points[, 2],
      main = 'Representation de l AFTD des especes par cmdscale',
      xlab = '',
      ylab = '',
-     xlim = c(-30, 70),
-     ylim = c(-50, 50))
+     xlim = range(aftd$points[, 1]),
+     ylim = range(aftd$points[, 2]))
 text(aftd$points[, 1], aftd$points[, 2],
      rownames(mutations),
      cex = 0.8)
@@ -50,18 +49,18 @@ dev.off()
 cat(pngname, 'sauvegardee\n\n')
 
 # computes Sammon's non linear mapping
-mutationsMatrix = as.matrix(mutations)
+mutationsMatrix <- as.matrix(mutations)
 sammon <- sammon(mutationsMatrix, aftd$points, k = 2)
 
 pngnameSammon <- 'sammon.png'
 png(pngnameSammon, width = 750, height = 500)
 plot(sammon$points[, 1], sammon$points[, 2],
      type = 'n',
-     main = 'Projection de Sammon, aftd realisee par cmdscale',
+     main = 'Projection de Sammon des donnees mutations',
      xlab = '',
      ylab = '',
-     xlim = c(-50, 100),
-     ylim = c(-50, 50))
+     xlim = range(sammon$points[, 1]),
+     ylim = range(sammon$points[, 2]))
 text(sammon$points[, 1], sammon$points[, 2],
      rownames(mutations),
      cex = 0.8)
@@ -75,11 +74,11 @@ pngnameKruskal <- 'kruskal.png'
 png(pngnameKruskal, width = 750, height = 500)
 plot(kruskal$points[, 1], kruskal$points[, 2],
      type = 'n',
-     main = 'Projection de Kruskal, aftd realisee par cmdscale',
+     main = 'Projection de Kruskal des donnees mutations',
      xlab = '',
      ylab = '',
-     xlim = c(-50, 100),
-     ylim = c(-50, 50))
+     xlim = range(kruskal$points[, 1]),
+     ylim = range(kruskal$points[, 2]))
 text(kruskal$points[, 1], kruskal$points[, 2],
      rownames(mutations),
      cex = 0.8)
