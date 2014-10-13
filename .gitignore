@@ -3,3 +3,8 @@
 *.png
 *.swp
 *~
+*.tex
+*.log
+*.out
+*.pdf
+*.aux
