@@ -53,17 +53,17 @@ mutationsMatrix <- as.matrix(mutations)
 sammon <- sammon(mutationsMatrix, aftd$points, k = 2)
 
 pngnameSammon <- 'sammon.png'
-png(pngnameSammon, width = 750, height = 500)
+png(pngnameSammon)
 plot(sammon$points[, 1], sammon$points[, 2],
      type = 'n',
      main = 'Projection de Sammon des donnees mutations',
      xlab = '',
      ylab = '',
-     xlim = range(sammon$points[, 1]),
-     ylim = range(sammon$points[, 2]))
+     xlim = range(sammon$points[, 1]) + c(0, 5),
+     ylim = range(sammon$points[, 2]),
+     asp = 1)
 text(sammon$points[, 1], sammon$points[, 2],
-     rownames(mutations),
-     cex = 0.8)
+     rownames(mutations))
 dev.off()
 cat(pngnameSammon, 'sauvegardee\n\n')
 
@@ -71,17 +71,17 @@ cat(pngnameSammon, 'sauvegardee\n\n')
 kruskal <- isoMDS(mutationsMatrix, aftd$points, k = 2)
 
 pngnameKruskal <- 'kruskal.png'
-png(pngnameKruskal, width = 750, height = 500)
+png(pngnameKruskal)
 plot(kruskal$points[, 1], kruskal$points[, 2],
      type = 'n',
      main = 'Projection de Kruskal des donnees mutations',
      xlab = '',
      ylab = '',
      xlim = range(kruskal$points[, 1]),
-     ylim = range(kruskal$points[, 2]))
+     ylim = range(kruskal$points[, 2]),
+     asp = 1)
 text(kruskal$points[, 1], kruskal$points[, 2],
-     rownames(mutations),
-     cex = 0.8)
+     rownames(mutations))
 dev.off()
 cat(pngnameKruskal, 'sauvegardee\n\n')
 
