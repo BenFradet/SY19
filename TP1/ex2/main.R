@@ -19,32 +19,31 @@ cat('Pourcentage d inertie explique par les 2 premiers axes par cmdscale',
     aftdQuality, '\n')
 
 pngnameHomemade <- 'aftdHomemade.png'
-png(pngnameHomemade, width = 500, height = 500)
+png(pngnameHomemade)
 plot(aftdHM$points[, 1], aftdHM$points[, 2],
      type = 'n',
-     main = 'Representation de l AFTD des especes par notre methode',
+     main = 'Representation de l AFTD des donnees mutations par notre methode',
      xlab = '',
      ylab = '',
-     xlim = range(aftdHM$points[, 1]),
-     ylim = range(aftdHM$points[, 2]))
+     xlim = range(aftdHM$points[, 1]) + c(-7, 5),
+     ylim = range(aftdHM$points[, 2]),
+     asp = 1)
 text(aftdHM$points[, 1], aftdHM$points[, 2],
-     rownames(mutations),
-     cex = 0.8)
+     rownames(mutations))
 dev.off()
 cat(pngnameHomemade, 'sauvegardee\n')
 
 pngname <- 'aftd.png'
-png(pngname, width = 500, height = 500)
+png(pngname)
 plot(aftd$points[, 1], aftd$points[, 2],
      type = 'n',
-     main = 'Representation de l AFTD des especes par cmdscale',
+     main = 'Representation de l AFTD des donnees mutations',
      xlab = '',
      ylab = '',
-     xlim = range(aftd$points[, 1]),
+     xlim = range(aftd$points[, 1] + c(-7, 5)),
      ylim = range(aftd$points[, 2]))
 text(aftd$points[, 1], aftd$points[, 2],
-     rownames(mutations),
-     cex = 0.8)
+     rownames(mutations))
 dev.off()
 cat(pngname, 'sauvegardee\n\n')
 
@@ -77,7 +76,7 @@ plot(kruskal$points[, 1], kruskal$points[, 2],
      main = 'Projection de Kruskal des donnees mutations',
      xlab = '',
      ylab = '',
-     xlim = range(kruskal$points[, 1]),
+     xlim = range(kruskal$points[, 1]) + c(-8, 5),
      ylim = range(kruskal$points[, 2]),
      asp = 1)
 text(kruskal$points[, 1], kruskal$points[, 2],
@@ -90,9 +89,29 @@ shepardAftd <- Shepard(dist(mutationsMatrix), aftd$points)
 shepardSammon <- Shepard(dist(mutationsMatrix), sammon$points)
 shepardKruskal <- Shepard(dist(mutationsMatrix), kruskal$points)
 
-pngnameShepardAftd <- 'shepardAftd.png'
-png(pngnameShepardAftd, width = 500, height = 500)
+pngnameShepard <- 'shepard.png'
+png(pngnameShepard, width = 300)
+par(mfrow = c(3, 1))
+plot(shepardSammon,
+     main = 'Diagramme de Shepard de la projection de Sammon',
+     pch = '.',
+     xlab = 'Dissimilarite',
+     ylab = 'Distance',
+     xlim = range(shepardSammon$x),
+     ylim = range(shepardSammon$y))
+lines(shepardSammon$x, shepardSammon$yf,
+      type = 'S')
+plot(shepardKruskal,
+     main = 'Diagramme de Shepard de la projection de Kruskal',
+     pch = '.',
+     xlab = 'Dissimilarite',
+     ylab = 'Distance',
+     xlim = range(shepardKruskal$x),
+     ylim = range(shepardKruskal$y))
+lines(shepardKruskal$x, shepardKruskal$yf,
+      type = 'S')
 plot(shepardAftd,
+     main = 'Diagramme de Shepard de l AFTD initiale',
      pch = '.',
      xlab = 'Dissimilarite',
      ylab = 'Distance',
@@ -101,30 +120,4 @@ plot(shepardAftd,
 lines(shepardAftd$x, shepardAftd$yf,
       type = 'S')
 dev.off()
-cat(pngnameShepardAftd, 'sauvegardee\n\n')
-
-pngnameShepardSammon <- 'shepardSammon.png'
-png(pngnameShepardSammon, width = 500, height = 500)
-plot(shepardSammon,
-     pch = '.',
-     xlab = 'Dissimilarite',
-     ylab = 'Distance',
-     xlim = range(shepardSammon$x),
-     ylim = range(shepardSammon$y))
-lines(shepardSammon$x, shepardSammon$yf,
-      type = 'S')
-dev.off()
-cat(pngnameShepardSammon, 'sauvegardee\n\n')
-
-pngnameShepardKruskal <- 'shepardKruskal.png'
-png(pngnameShepardKruskal, width = 500, height = 500)
-plot(shepardKruskal,
-     pch = '.',
-     xlab = 'Dissimilarite',
-     ylab = 'Distance',
-     xlim = range(shepardKruskal$x),
-     ylim = range(shepardKruskal$y))
-lines(shepardKruskal$x, shepardKruskal$yf,
-      type = 'S')
-dev.off()
-cat(pngnameShepardKruskal, 'sauvegardee\n\n')
+cat(pngnameShepard, 'sauvegardee\n\n')
