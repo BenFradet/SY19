@@ -85,9 +85,10 @@ dev.off()
 cat(pngnameKruskal, 'sauvegardee\n\n')
 
 # computes Shepard's diagrams
-shepardAftd <- Shepard(dist(mutationsMatrix), aftd$points)
-shepardSammon <- Shepard(dist(mutationsMatrix), sammon$points)
-shepardKruskal <- Shepard(dist(mutationsMatrix), kruskal$points)
+mutationsDist <- as.dist(mutations)
+shepardAftd <- Shepard(mutationsDist, aftd$points)
+shepardSammon <- Shepard(mutationsDist, sammon$points)
+shepardKruskal <- Shepard(mutationsDist, kruskal$points)
 
 pngnameShepard <- 'shepard.png'
 png(pngnameShepard, width = 300)
@@ -96,28 +97,28 @@ plot(shepardSammon,
      main = 'Diagramme de Shepard de la projection de Sammon',
      pch = '.',
      xlab = 'Dissimilarite',
-     ylab = 'Distance',
-     xlim = range(shepardSammon$x),
-     ylim = range(shepardSammon$y))
+     ylab = 'Distance')
 lines(shepardSammon$x, shepardSammon$yf,
       type = 'S')
+abline(0, 1,
+       col = 'red')
 plot(shepardKruskal,
      main = 'Diagramme de Shepard de la projection de Kruskal',
      pch = '.',
      xlab = 'Dissimilarite',
-     ylab = 'Distance',
-     xlim = range(shepardKruskal$x),
-     ylim = range(shepardKruskal$y))
+     ylab = 'Distance')
 lines(shepardKruskal$x, shepardKruskal$yf,
       type = 'S')
+abline(0, 1,
+       col = 'red')
 plot(shepardAftd,
      main = 'Diagramme de Shepard de l AFTD initiale',
      pch = '.',
      xlab = 'Dissimilarite',
-     ylab = 'Distance',
-     xlim = range(shepardAftd$x),
-     ylim = range(shepardAftd$y))
+     ylab = 'Distance')
 lines(shepardAftd$x, shepardAftd$yf,
       type = 'S')
+abline(0, 1,
+       col = 'red')
 dev.off()
 cat(pngnameShepard, 'sauvegardee\n\n')
