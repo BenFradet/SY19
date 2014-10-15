@@ -12,6 +12,14 @@ aftd <- function(d) {
 
     # diagonalization of w
     eigenW <- eigen(1/n * w)
+
+    # checks that the eigen values are postive or null so that 1/n * w
+    # is positive semi-definite
+    moreThanZero <- function(x) {
+        return(x > 0 || abs(x) < .Machine$double.eps)
+    }
+    stopifnot(moreThanZero(eigenW$values))
+
     v <- sqrt(n) * eigenW$vectors
     l <- diag(eigenW$values)
 
