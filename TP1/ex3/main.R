@@ -1,52 +1,54 @@
 library(MASS)
 
 graph <- function(data, name) {
-    aftd <- cmdscale(data, k = 2)
+    aftd <- cmdscale(data, k = 2, eig = T)
+
+    aftdQuality <- 100 * sum(aftd$eig[c(1, 2)]) / sum(aftd$eig[aftd$eig > 0])
+    cat('qualite 2 axes', aftdQuality, '\n\n')
+
+    aftdQuality <- 100 * sum(aftd$eig[c(1, 2, 3)]) / sum(aftd$eig[aftd$eig > 0])
+    cat('qualite 3 axes', aftdQuality, '\n\n')
+
     pngname <- paste(substitute(data), 'Aftd.png', sep = '')
     png(pngname)
-    plot(aftd[, 1], aftd[, 2],
+    plot(aftd$point[, 1], aftd$points[, 2],
          type = 'n',
          main = paste('Representation de l AFTD des donnees', name),
          xlab = '',
          ylab = '',
-         asp = 1)
-    text(aftd[, 1], aftd[, 2],
-         rownames(data),
-         cex = 0.8)
+         xlim = range(aftd$points[, 1]) + c(-1000, 300))
+    text(aftd$points[, 1], aftd$points[, 2],
+         rownames(data))
     dev.off()
     cat(pngname, 'sauvegardee\n\n')
 
     mat <- as.matrix(data)
 
-    sammon <- sammon(mat, aftd, k = 2)
+    sam<- sammon(mat, aftd$points, k = 2)
     pngnameSammon <- paste(substitute(data), 'Sammon.png', sep = '')
-    png(pngnameSammon, width = 500, height = 500)
-    plot(sammon$points[, 1], sammon$points[, 2],
+    png(pngnameSammon)
+    plot(sam$points[, 1], sam$points[, 2],
          type = 'n',
          main = paste('Projection de Sammon des donnees', name),
          xlab = '',
          ylab = '',
-         xlim = range(sammon$points[, 1]),
-         ylim = range(sammon$points[, 2]))
-    text(sammon$points[, 1], sammon$points[, 2],
-         rownames(data),
-         cex = 0.8)
+         xlim = range(sam$points[, 1]) + c(-1000, 300))
+    text(sam$points[, 1], sam$points[, 2],
+         rownames(data))
     dev.off()
     cat(pngnameSammon, 'sauvegardee\n\n')
 
-    kruskal <- isoMDS(mat, aftd, k = 2)
+    kruskal <- isoMDS(mat, aftd$points, k = 2)
     pngnameKruskal <- paste(substitute(data), 'Kruskal.png', sep = '')
-    png(pngnameKruskal, width = 500, height = 500)
+    png(pngnameKruskal)
     plot(kruskal$points[, 1], kruskal$points[, 2],
          type = 'n',
          main = paste('Projection de Kruskal des donnees', name),
          xlab = '',
          ylab = '',
-         xlim = range(kruskal$points[, 1]),
-         ylim = range(kruskal$points[, 2]))
+         xlim = range(kruskal$points[, 1]) + c(-1000, 300))
     text(kruskal$points[, 1], kruskal$points[, 2],
-         rownames(data),
-         cex = 0.8)
+         rownames(data))
     dev.off()
     cat(pngnameKruskal, 'sauvegardee\n\n')
 }
