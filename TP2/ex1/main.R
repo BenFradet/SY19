@@ -18,6 +18,11 @@ fleurs$eigen <- eigen(fleurs$sigma)
 # principal components
 fleurs$principalComponents <- fleurs$numCentered %*% fleurs$eigen$vectors
 # computes the percentage of explained inertia for the first factorial plan
+fleurs$inertia <- 100 * sum(fleurs$eigen$values[c(1, 2)]) /
+                        sum(fleurs$eigen$values[fleurs$eigen$values > 0])
+
+cat('Pourcentage d\'inertie expliquée par le premier plan factoriel',
+    fleurs$inertia, '\n')
 
 for (i in 2:4) {
     kmeansi <- kmeans(fleurs$num, i)
@@ -26,21 +31,10 @@ for (i in 2:4) {
     plot(fleurs$principalComponents,
          pch = c(1:3)[fleurs$cls],
          col = c(1:i)[kmeansi$cluster],
-         main = paste('Représentation des classes prédites par\n',
+         main = paste('Représentation des clusters produits par\n',
                       'la méthode des centres mobiles avec', i, 'classes'),
          xlab = 'Composante 1',
          ylab = 'Composante2')
-    #clusplot(fleurs$num, kmeansi$cluster,
-    #         color = T,
-    #         shade = T,
-    #         labels = 0,
-    #         lines = 0,
-    #         col.p = 'black',
-    #         main = paste('Représentation des classes prédites par\n',
-    #                      'la méthode des centres mobiles avec', i, 'classes'),
-    #         xlab = 'Composante 1',
-    #         ylab = 'Composante 2',
-    #         sub = '')
     legend(-2, 1.4,
            title = 'Classes réelles',
            c('Classe 1', 'Classe 2', 'Classe 3'),
