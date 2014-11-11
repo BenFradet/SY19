@@ -10,7 +10,6 @@ em <- function(x, nbClasses) {
 
     # classification à partir des tik de la dernière itération?
     # sensible aux outliers
-    # faire 100 fois et prendre la solution avec la plus grande vraisemblance
 
     # Expectation-maximization algorithm
     # computation of the initial parameters
@@ -23,9 +22,7 @@ em <- function(x, nbClasses) {
     # random values between -1 and 1 because x centered
     mus <- matrix(0, nrow = n, ncol = 2)
     mus[1, 1] <- runif(1, -1, 1)
-    print(mus[1, 1])
     mus[1, 2] <- runif(1, -1, 1)
-    print(mus[1,2])
 
     # initialized to 1 because x standardized
     sigmas <- matrix(0, nrow = n, ncol = 2)
@@ -88,7 +85,14 @@ em <- function(x, nbClasses) {
             res$likelihood <- likelihood
 
             # computes a class vector
-            # res$class <- apply(
+            res$class <- apply(t, 1,
+                               function(row) {
+                                   if (row[1] > row[2]) {
+                                       return(1)
+                                   } else {
+                                       return(2)
+                                   }
+                               })
 
             return(res)
         }
