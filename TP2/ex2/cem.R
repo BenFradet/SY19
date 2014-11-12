@@ -1,0 +1,98 @@
+source('gaussian.R')
+
+cem <- function(x, nbClasses) {
+    n <- length(x)
+
+    # standardize the input data
+    x <- scale(x)
+
+    # 1 / k (k = nb of classes)
+    pis <- matrix(0, nrow = n, ncol = 2)
+    pis[1, 1] <- 1 / nbClasses
+    pis[1, 2] <- 1 / nbClasses
+
+    # random values between -1 and 1 because x centered
+    mus <- matrix(0, nrow = n, ncol = 2)
+    mus[1, 1] <- runif(1, -1, 1)
+    mus[1, 2] <- runif(1, -1, 1)
+
+    # initialized to 1 because x standardized
+    sigmas <- matrix(0, nrow = n, ncol = 2)
+    sigmas[1, 1] <- 1
+    sigmas[1, 2] <- 1
+
+    t <- matrix(0, nrow = n, ncol = 2)
+    iter <- 0
+    stoppingCriterion <- 10^-3
+
+    repeat {
+        # expectation step, computation of the t_ik, same as EM
+        iter <- iter + 1
+        for (i in 1:n) {
+            den <-
+                pis[iter, 1] * gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) +
+                pis[iter, 2] * gaussian(x[i], mus[iter, 2], sigmas[iter, 2])
+            t[i, 1] <- pis[iter, 1] *
+                gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) / den
+            t[i, 2] <- pis[iter, 2] *
+                gaussian(x[i], mus[iter, 2], sigmas[iter, 2]) / den
+        }
+
+        # classification step
+        c <- apply(t, 1,
+                   function(row) {
+                       if (row[1] > row[2]) {
+                           return(c(1, 0))
+                       } else {
+                           return(c(0, 1))
+                       }
+                   })
+        c <- t(c)
+
+        # maximimsation step
+        pis[iter + 1, 1] <- sum(c[1:n, 1]) / n
+        pis[iter + 1, 2] <- 1 - pis[iter + 1, 1]
+        mus[iter + 1, 1] <- sum(c[1:n, 1] * x[1:n]) / sum(c[1:n, 1])
+        mus[iter + 1, 2] <- sum(c[1:n, 2] * x[1:n]) / sum(c[1:n, 2])
+        sigmas[iter + 1, 1] <- sum(c[1:n, 1] * (x[1:n] -
+            mus[iter + 1, 1]) ^ 2) / sum(c[1:n, 1])
+        sigmas[iter + 1, 2] <- sum(c[1:n, 2] * (x[1:n] -
+            mus[iter + 1, 2]) ^ 2) / sum(c[1:n, 2])
+
+        likelihood <- 0
+        diff <- abs(pis[iter, 1] - pis[iter + 1, 1]) +
+                abs(pis[iter, 2] - pis[iter + 1, 2]) +
+                abs(mus[iter, 1] - mus[iter + 1, 1]) +
+                abs(mus[iter, 2] - mus[iter + 1, 2]) +
+                abs(sigmas[iter, 1] - sigmas[iter + 1, 1]) +
+                abs(sigmas[iter, 2] - sigmas[iter + 1, 2])
+        if (diff < stoppingCriterion) {
+            for (i in 1:n) {
+                likelihood <- likelihood +
+                    c[i, 1] * log(pis[iter + 1, 1] *
+                        gaussian(x[i], mus[iter + 1, 1], sigmas[iter + 1, 1])) +
+                    c[i, 2] * log(pis[iter + 1, 2] *
+                        gaussian(x[i], mus[iter + 1, 2], sigmas[iter + 1, 2]))
+            }
+
+            res <- NULL
+            res$iter <- iter
+            res$pi1 <- pis[iter + 1, 1]
+            res$pi2 <- pis[iter + 1, 2]
+            res$mu1 <- mus[iter + 1, 1]
+            res$mu2 <- mus[iter + 1, 2]
+            res$sigma1 <- sigmas[iter + 1, 1]
+            res$sigma2 <- sigmas[iter + 1, 2]
+            res$likelihood <- likelihood
+            res$class <- apply(c, 1,
+                               function(row) {
+                                   if (row[1] == 1) {
+                                       return(1)
+                                   } else {
+                                       return(2)
+                                   }
+                               })
+            return(res)
+        }
+    }
+}
