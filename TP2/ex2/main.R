@@ -1,5 +1,5 @@
 source('em.R')
-source('randIndex.R')
+source('../randIndex.R')
 
 n <- 1000
 n1 <- rbinom(1, n, 0.5)
@@ -20,7 +20,7 @@ df <- data.frame(iter = c(),
                  sigma1 = c(),
                  sigma2 = c(),
                  likelihood = c())
-for (i in 1:5) {
+for (i in 1:10) {
     resEM <- em(x, 2)
     print(resEM$likelihood)
     hashmap[[paste(resEM$likelihood)]] <- resEM$class
