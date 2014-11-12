@@ -1,6 +1,6 @@
 library(MASS)
 library(cluster)
-source('randIndex.R')
+source('../randIndex.R')
 
 data(iris)
 fleurs <- NULL
