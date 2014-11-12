@@ -1,20 +1,18 @@
 source('gaussian.R')
 
 em <- function(x, nbClasses) {
-
     n <- length(x)
 
     # standardize the input data
     x <- x - mean(x)
     x <- x / sd(x)
 
-    # classification à partir des tik de la dernière itération?
     # sensible aux outliers
 
     # Expectation-maximization algorithm
     # computation of the initial parameters
 
-    # 1 / k (k = # nb of classes)
+    # 1 / k (k = nb of classes)
     pis <- matrix(0, nrow = n, ncol = 2)
     pis[1, 1] <- 1 / nbClasses
     pis[1, 2] <- 1 / nbClasses
@@ -31,14 +29,14 @@ em <- function(x, nbClasses) {
 
     t <- matrix(0, nrow = n, ncol = 2)
     iter <- 0
-    stoppingCriterion <- 10^-9
+    stoppingCriterion <- 10^-3
 
     repeat {
         # expectation step, computation of the t_ik
         iter <- iter + 1
         for (i in 1:n) {
             den <- pis[iter, 1] *
-                    gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) +
+                gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) +
                 pis[iter, 2] * gaussian(x[i], mus[iter, 2], sigmas[iter, 2])
             t[i, 1] <- pis[iter, 1] *
                 gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) / den
