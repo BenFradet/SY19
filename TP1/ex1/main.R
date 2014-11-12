@@ -88,7 +88,7 @@ plot(x[,1], x[,2],
      col = 'red',
      pch = 1)
 points(components[,1], components[,2],
-       col = ' blue',
+       col = 'blue',
        pch = 2)
 legend(1.5, 3,
        c('Nuage original', 'AFTD'),
