@@ -1,5 +1,3 @@
-source('gaussian.R')
-
 em <- function(x, nbClasses) {
     n <- length(x)
 
@@ -29,19 +27,20 @@ em <- function(x, nbClasses) {
 
     t <- matrix(0, nrow = n, ncol = 2)
     iter <- 0
-    stoppingCriterion <- 10^-3
+    stoppingCriterion <- 10^-6
 
     repeat {
         # expectation step, computation of the t_ik
         iter <- iter + 1
         for (i in 1:n) {
             den <- pis[iter, 1] *
-                gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) +
-                pis[iter, 2] * gaussian(x[i], mus[iter, 2], sigmas[iter, 2])
+                dnorm(x[i], mean = mus[iter, 1], sd = sqrt(sigmas[iter, 1])) +
+                pis[iter, 2] *
+                dnorm(x[i], mean = mus[iter, 2], sd = sqrt(sigmas[iter, 2]))
             t[i, 1] <- pis[iter, 1] *
-                gaussian(x[i], mus[iter, 1], sigmas[iter, 1]) / den
+                dnorm(x[i], mus[iter, 1], sqrt(sigmas[iter, 1])) / den
             t[i, 2] <- pis[iter, 2] *
-                gaussian(x[i], mus[iter, 2], sigmas[iter, 2]) / den
+                dnorm(x[i], mus[iter, 2], sqrt(sigmas[iter, 2])) / den
         }
 
         # maximization step, update of the parameters
@@ -54,24 +53,26 @@ em <- function(x, nbClasses) {
         sigmas[iter + 1, 2] <- sum(t[1:n, 2] * (x[1:n] -
             mus[iter + 1, 2]) ^ 2) / sum(t[1:n, 2])
 
-        # check for convergence
+        # computes the likelihood of our solution
+        # vraisemblance complétée avec les t_ik
+        # vraisemblance observée à calculer
         likelihood <- 0
-        diff <- abs(pis[iter, 1] - pis[iter + 1, 1]) +
-                abs(pis[iter, 2] - pis[iter + 1, 2]) +
-                abs(mus[iter, 1] - mus[iter + 1, 1]) +
-                abs(mus[iter, 2] - mus[iter + 1, 2]) +
-                abs(sigmas[iter, 1] - sigmas[iter + 1, 1]) +
-                abs(sigmas[iter, 2] - sigmas[iter + 1, 2])
-        if (diff < stoppingCriterion) {
-            # computes the likelihood of our solution
-            for (i in 1:n) {
-                likelihood <- likelihood +
-                    t[i, 1] * log(pis[iter + 1, 1] *
-                        gaussian(x[i], mus[iter + 1, 1], sigmas[iter + 1, 1])) +
-                    t[i, 2] * log(pis[iter + 1, 2] *
-                        gaussian(x[i], mus[iter + 1, 2], sigmas[iter + 1, 2]))
-            }
+        for (i in 1:n) {
+            likelihood <- likelihood +
+                log(pis[iter + 1, 1] *
+                    dnorm(x[i], mus[iter + 1, 1], sigmas[iter + 1, 1]) +
+                    pis[iter + 1, 2] *
+                    dnorm(x[i], mus[iter + 1, 2], sigmas[iter + 1, 2]))
+        }
 
+        # check for convergence
+        delta <- abs(pis[iter, 1] - pis[iter + 1, 1]) +
+            abs(pis[iter, 2] - pis[iter + 1, 2]) +
+            abs(mus[iter, 1] - mus[iter + 1, 1]) +
+            abs(mus[iter, 2] - mus[iter + 1, 2]) +
+            abs(sigmas[iter, 1] - sigmas[iter + 1, 1]) +
+            abs(sigmas[iter, 2] - sigmas[iter + 1, 2])
+        if (delta < stoppingCriterion) {
             res <- NULL
             res$iter <- iter
             res$pi1 <- pis[iter + 1, 1]
