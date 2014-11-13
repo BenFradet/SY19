@@ -27,7 +27,7 @@ em <- function(x, nbClasses, cem = FALSE) {
 
     t <- matrix(0, nrow = n, ncol = 2)
     iter <- 0
-    stoppingCriterion <- 10^-6
+    stoppingCriterion <- 10^-10
 
     repeat {
         # expectation step, computation of the t_ik
@@ -43,20 +43,30 @@ em <- function(x, nbClasses, cem = FALSE) {
                 dnorm(x[i], mus[iter, 2], sqrt(sigmas[iter, 2])) / den
         }
 
-        # classification step if cem is true
         if (cem) {
-            t <- round(t)
-        }
+            # classification step if cem is true
+            c <- round(t)
 
-        # maximization step, update of the parameters
-        pis[iter + 1, 1] <- sum(t[1:n, 1]) / n
-        pis[iter + 1, 2] <- 1 - pis[iter + 1, 1]
-        mus[iter + 1, 1] <- sum(t[1:n, 1] * x[1:n]) / sum(t[1:n, 1])
-        mus[iter + 1, 2] <- sum(t[1:n, 2] * x[1:n]) / sum(t[1:n, 2])
-        sigmas[iter + 1, 1] <- sum(t[1:n, 1] * (x[1:n] -
-            mus[iter + 1, 1]) ^ 2) / sum(t[1:n, 1])
-        sigmas[iter + 1, 2] <- sum(t[1:n, 2] * (x[1:n] -
-            mus[iter + 1, 2]) ^ 2) / sum(t[1:n, 2])
+            # maximization step, update of the parameters
+            pis[iter + 1, 1] <- sum(c[1:n, 1]) / n
+            pis[iter + 1, 2] <- 1 - pis[iter + 1, 1]
+            mus[iter + 1, 1] <- sum(c[1:n, 1] * x[1:n]) / sum(c[1:n, 1])
+            mus[iter + 1, 2] <- sum(c[1:n, 2] * x[1:n]) / sum(c[1:n, 2])
+            sigmas[iter + 1, 1] <- sum(c[1:n, 1] * (x[1:n] -
+                mus[iter + 1, 1]) ^ 2) / sum(c[1:n, 1])
+            sigmas[iter + 1, 2] <- sum(c[1:n, 2] * (x[1:n] -
+                mus[iter + 1, 2]) ^ 2) / sum(c[1:n, 2])
+        } else {
+            # maximization step, update of the parameters
+            pis[iter + 1, 1] <- sum(t[1:n, 1]) / n
+            pis[iter + 1, 2] <- 1 - pis[iter + 1, 1]
+            mus[iter + 1, 1] <- sum(t[1:n, 1] * x[1:n]) / sum(t[1:n, 1])
+            mus[iter + 1, 2] <- sum(t[1:n, 2] * x[1:n]) / sum(t[1:n, 2])
+            sigmas[iter + 1, 1] <- sum(t[1:n, 1] * (x[1:n] -
+                mus[iter + 1, 1]) ^ 2) / sum(t[1:n, 1])
+            sigmas[iter + 1, 2] <- sum(t[1:n, 2] * (x[1:n] -
+                mus[iter + 1, 2]) ^ 2) / sum(t[1:n, 2])
+        }
 
         # computes the likelihood of our solution
         # vraisemblance complétée avec les t_ik
