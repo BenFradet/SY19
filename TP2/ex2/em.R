@@ -1,4 +1,4 @@
-em <- function(x, nbClasses) {
+em <- function(x, nbClasses, cem = FALSE) {
     n <- length(x)
 
     # standardize the input data
@@ -41,6 +41,11 @@ em <- function(x, nbClasses) {
                 dnorm(x[i], mus[iter, 1], sqrt(sigmas[iter, 1])) / den
             t[i, 2] <- pis[iter, 2] *
                 dnorm(x[i], mus[iter, 2], sqrt(sigmas[iter, 2])) / den
+        }
+
+        # classification step if cem is true
+        if (cem) {
+            t <- round(t)
         }
 
         # maximization step, update of the parameters

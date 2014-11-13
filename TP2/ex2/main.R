@@ -1,5 +1,4 @@
 source('em.R')
-source('cem.R')
 source('../randIndex.R')
 
 n <- 1000
@@ -36,7 +35,7 @@ for (i in 1:10) {
     hashmapEM[[paste(resEM$likelihood)]] <- resEM$class
     dfEM <- rbind(dfEM, resEM[-length(resEM)])
 
-    resCEM <- cem(x, 2)
+    resCEM <- em(x, 2, TRUE)
     cat('resCEM:', resCEM$likelihood, '\n')
     hashmapCEM[[paste(resCEM$likelihood)]] <- resCEM$class
     dfCEM <- rbind(dfCEM, resCEM[-length(resCEM)])
@@ -50,7 +49,7 @@ rowMaxLhCEM <- dfCEM[dfCEM$likelihood == maxLhCEM, ]
 classMaxLhEM <- hashmapEM[[paste(maxLhEM)]]
 classMaxLhCEM <- hashmapCEM[[paste(maxLhCEM)]]
 
-cat('EM:\n')
+cat('\nEM:\n')
 cat('Converged in', rowMaxLhEM$iter, 'iterations\n\n')
 cat('pi1 =', rowMaxLhEM$pi1, 'pi2 =', rowMaxLhEM$pi2, '\n')
 cat('piEmp1 =', n1 / n, 'piEmp2 =', (n - n1) / n, '\n\n')
