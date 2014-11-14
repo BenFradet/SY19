@@ -1,3 +1,5 @@
+source('em.R')
+
 run <- function(data, dataClass, nbClasses, nbIters) {
     hashmapEM <- list()
     dfEM <- data.frame(iter = c(),
@@ -18,11 +20,11 @@ run <- function(data, dataClass, nbClasses, nbIters) {
                      sigma2 = c(),
                      likelihood = c())
     for (i in 1:nbIters) {
-        resEM <- em(data, nbClasses)
+        resEM <- em(data, nbClasses, 1000)
         hashmapEM[[paste(resEM$likelihood)]] <- resEM$class
         dfEM <- rbind(dfEM, resEM[-length(resEM)])
 
-        resCEM <- em(data, nbClasses, TRUE)
+        resCEM <- em(data, nbClasses, 1000, TRUE)
         hashmapCEM[[paste(resCEM$likelihood)]] <- resCEM$class
         dfCEM <- rbind(dfCEM, resCEM[-length(resCEM)])
     }
@@ -49,11 +51,8 @@ run <- function(data, dataClass, nbClasses, nbIters) {
     cat('\nCEM:\n')
     cat('Converged in', rowMaxLhCEM$iter, 'iterations\n\n')
     cat('pi1 =', rowMaxLhCEM$pi1, 'pi2 =', rowMaxLhCEM$pi2, '\n')
-    cat('piEmp1 =', n1 / n, 'piEmp2 =', (n - n1) / n, '\n\n')
     cat('mu1 =', rowMaxLhCEM$mu1, 'mu2 =', rowMaxLhCEM$mu2, '\n')
-    cat('muEmp1 =', mean(x[1:n1]), 'muEmp2 =', mean(x[n1Plus1:n]), '\n\n')
     cat('sigma1 =', rowMaxLhCEM$sigma1, 'sigma2 =', rowMaxLhCEM$sigma2, '\n')
-    cat('sigmaEmp1 =', sd(x[1:n1]) ^ 2, 'sigmaEmp2 =', sd(x[n1Plus1:n]) ^ 2, '\n\n')
     cat('likelihood =', rowMaxLhCEM$likelihood, '\n')
     randIndex <- randindex(classMaxLhCEM, dataClass)
     cat('rand index =', randIndex$rate, '\n')
@@ -61,5 +60,7 @@ run <- function(data, dataClass, nbClasses, nbIters) {
     cat('\nKMeans:\n')
     randIndex <- randindex(kmeansI$cluster, dataClass)
     cat('rand index =', randIndex$rate, '\n\n')
+
+    return(c(rowMaxLhEM, rowMaxLhCEM))
 }
 
