@@ -61,6 +61,6 @@ run <- function(data, dataClass, nbClasses, nbIters) {
     randIndex <- randindex(kmeansI$cluster, dataClass)
     cat('rand index =', randIndex$rate, '\n\n')
 
-    return(c(rowMaxLhEM, rowMaxLhCEM))
+    return(list(em = rowMaxLhEM, cem = rowMaxLhCEM))
 }
 
