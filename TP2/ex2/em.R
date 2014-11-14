@@ -1,4 +1,4 @@
-em <- function(x, nbClasses, cem = FALSE) {
+em <- function(x, nbClasses, nbIters, cem = FALSE) {
     n <- length(x)
 
     # standardize the input data
@@ -11,17 +11,17 @@ em <- function(x, nbClasses, cem = FALSE) {
     # computation of the initial parameters
 
     # 1 / k (k = nb of classes)
-    pis <- matrix(0, nrow = n, ncol = 2)
+    pis <- matrix(0, nrow = nbIters, ncol = 2)
     pis[1, 1] <- 1 / nbClasses
     pis[1, 2] <- 1 / nbClasses
 
     # random values between -1 and 1 because x centered
-    mus <- matrix(0, nrow = n, ncol = 2)
+    mus <- matrix(0, nrow = nbIters, ncol = 2)
     mus[1, 1] <- runif(1, -1, 1)
     mus[1, 2] <- runif(1, -1, 1)
 
     # initialized to 1 because x standardized
-    sigmas <- matrix(0, nrow = n, ncol = 2)
+    sigmas <- matrix(0, nrow = nbIters, ncol = 2)
     sigmas[1, 1] <- 1
     sigmas[1, 2] <- 1
 
@@ -30,8 +30,32 @@ em <- function(x, nbClasses, cem = FALSE) {
     stoppingCriterion <- 10^-10
 
     repeat {
-        # expectation step, computation of the t_ik
         iter <- iter + 1
+        if (iter > nbIters) {
+            res <- NULL
+            res$iter <- iter
+            res$pi1 <- pis[iter, 1]
+            res$pi2 <- pis[iter, 2]
+            res$mu1 <- mus[iter, 1]
+            res$mu2 <- mus[iter, 2]
+            res$sigma1 <- sigmas[iter, 1]
+            res$sigma2 <- sigmas[iter, 2]
+            res$likelihood <- likelihood
+
+            # computes a class vector
+            res$class <- apply(t, 1,
+                               function(row) {
+                                   if (row[1] > row[2]) {
+                                       return(1)
+                                   } else {
+                                       return(2)
+                                   }
+                               })
+
+            return(res)
+        }
+
+        # expectation step, computation of the t_ik
         for (i in 1:n) {
             den <- pis[iter, 1] *
                 dnorm(x[i], mean = mus[iter, 1], sd = sqrt(sigmas[iter, 1])) +
