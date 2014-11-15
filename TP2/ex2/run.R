@@ -29,11 +29,11 @@ run <- function(data, dataClass, nbClasses, nbIters) {
         dfCEM <- rbind(dfCEM, resCEM[-length(resCEM)])
     }
 
-    maxLhEM <- max(dfEM$likelihood)
+    maxLhEM <- min(dfEM$likelihood)
     rowMaxLhEM <- dfEM[dfEM$likelihood == maxLhEM, ][1, ]
     classMaxLhEM <- hashmapEM[[paste(maxLhEM)]]
 
-    maxLhCEM <- max(dfCEM$likelihood)
+    maxLhCEM <- min(dfCEM$likelihood)
     rowMaxLhCEM <- dfCEM[dfCEM$likelihood == maxLhCEM, ][1, ]
     classMaxLhCEM <- hashmapCEM[[paste(maxLhCEM)]]
 
