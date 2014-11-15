@@ -13,7 +13,7 @@ x <- x / sd(x)
 
 xClass <- c(rep(1, n1), rep(2, n - n1))
 
-parametersX <- run(x, xClass, 2, 1)
+parametersX <- run(x, xClass, 2, 10)
 
 cat('\ndonnees:\n')
 cat('piEmp1 =', n1 / n, 'piEmp2 =', (n - n1) / n, '\n')
@@ -22,31 +22,29 @@ cat('sigmaEmp1 =', sd(x[1:n1]) ^ 2, 'sigmaEmp2 =', sd(x[n1Plus1:n]) ^ 2, '\n\n')
 
 # histogram with density
 y <- seq(min(x), max(x), length = 100)
-fEm1 <- dnorm(y, parametersX$em$mu1, sqrt(parametersX$em$sigma1))
-fEm2 <- dnorm(y, parametersX$em$mu2, sqrt(parametersX$em$sigma2))
-fEm <- fEm1 + fEm2
-fCem1 <- dnorm(y, parametersX$cem$mu1, sqrt(parametersX$cem$sigma1))
-fCem2 <- dnorm(y, parametersX$cem$mu2, sqrt(parametersX$cem$sigma2))
-fCem <- fCem1 + fCem2
+fEmp <- dnorm(y, mean(x[1:n1]), sd(x[1:n1])) +
+    dnorm(y, mean(x[n1Plus1:n]), sd(x[n1Plus1:n]))
+fEm <- dnorm(y, parametersX$em$mu1, sqrt(parametersX$em$sigma1)) +
+    dnorm(y, parametersX$em$mu2, sqrt(parametersX$em$sigma2))
+fCem <- dnorm(y, parametersX$cem$mu1, sqrt(parametersX$cem$sigma1)) +
+    dnorm(y, parametersX$cem$mu2, sqrt(parametersX$cem$sigma2))
 
 pngname <- 'histDensityX.png'
 png(pngname)
 histX <- hist(x,
               breaks = 40,
+              ylim = c(0, 220),
               main = paste('Histogramme des crabes en fonction de\n',
                            'la longueur de leur lobe frontal', sep = ''),
               xlab = 'Longueur du lobe frontal en mm',
               ylab = 'Frequence')
 multiplier <- histX$counts / histX$density
-lines(y, fEm1 * multiplier[1] / 2, col = 'red', lty = 2)
-lines(y, fEm2 * multiplier[1] / 2, col = 'red', lty = 2)
+lines(y, fEmp * multiplier[1] / 2, col = 'black')
 lines(y, fEm * multiplier[1] / 2, col = 'red')
-lines(y, fCem1 * multiplier[1] / 2, col = 'blue', lty = 2)
-lines(y, fCem2 * multiplier[1] / 2, col = 'blue', lty = 2)
 lines(y, fCem * multiplier[1] / 2, col = 'blue')
 legend(2, 150,
-       c('em', 'cem'),
-       col = c('red', 'blue'),
+       c('réelles', 'em', 'cem'),
+       col = c('black', 'red', 'blue'),
        lwd = 1)
 dev.off()
 cat(pngname, 'sauvegardee\n')
@@ -87,7 +85,7 @@ cat(pngname, 'sauvegardee\n')
 
 # for the frontal lobe variable
 cat('\nFrontal lobe / Species:\n\n')
-parametersFL <- run(crabsFL, crabsSpecies, nlevels(crabsSpecies), 5)
+parametersFL <- run(crabsFL, crabsSpecies, nlevels(crabsSpecies), 100)
 cat('\ndonnees FL:\n')
 cat('piEmp1 =', 0.5, 'piEmp2 =', 0.5, '\n')
 cat('muEmp1 =', mean(crabsFL[crabs$sp == 'B']),
@@ -96,7 +94,7 @@ cat('sigmaEmp1 =', sd(crabsFL[crabs$sp == 'B']) ^ 2,
     'sigmaEmp2 =', sd(crabsFL[crabs$sp == 'O']) ^ 2, '\n\n')
 
 cat('\n\nRearWidth / Sex:\n\n')
-parametersRW <- run(crabsRW, crabsSex, nlevels(crabsSex), 5)
+parametersRW <- run(crabsRW, crabsSex, nlevels(crabsSex), 100)
 cat('\ndonnees RW:\n')
 cat('piEmp1 =', 0.5, 'piEmp2 =', 0.5, '\n')
 cat('muEmp1 =', mean(crabsRW[crabs$sex == 'M']),
