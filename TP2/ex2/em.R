@@ -5,8 +5,6 @@ em <- function(x, nbClasses, nbIters, cem = FALSE) {
     x <- x - mean(x)
     x <- x / sd(x)
 
-    # sensible aux outliers
-
     # Expectation-maximization algorithm
     # computation of the initial parameters
 
@@ -93,8 +91,6 @@ em <- function(x, nbClasses, nbIters, cem = FALSE) {
         }
 
         # computes the likelihood of our solution
-        # vraisemblance complétée avec les t_ik
-        # vraisemblance observée à calculer
         likelihood <- 0
         for (i in 1:n) {
             likelihood <- likelihood +
