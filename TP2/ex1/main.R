@@ -69,10 +69,12 @@ for (i in 2:5) {
     }
 }
 inertiaMeans <- colMeans(inertia)
+cat("inerties moyennes:", inertiaMeans, '\n')
 pngName <- 'methodeCoude.png'
 png(pngName)
 plot(c(2, 3, 4, 5), inertiaMeans,
-     type = 'l',
+     type = 'o',
+     ylim = c(0, max(inertiaMeans) + 10),
      xlab = 'Nombre de classes k',
      ylab = 'Inertie intra-classe',
      main = 'Inerties intra-classes moyennes pour k = {2, 3, 4, 5} classes')
