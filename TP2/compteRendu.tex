@@ -1,0 +1,615 @@
+% !TEX encoding = IsoLatin
+\documentclass{article}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{abstract}
+\usepackage{fancyhdr}
+\usepackage{float}
+
+\usepackage[colorlinks=true,linkcolor=red,urlcolor=blue,filecolor=green]{hyperref}
+
+\usepackage{dtklogos}
+\usepackage{pbox}
+\usepackage{caption}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{mathrsfs}
+
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\fancyhead[C]{TP 2: Classification et mélange}
+\fancyfoot[RO, LE]{\thepage}
+
+\newcommand{\bfx}{\mathbf(x)}
+\newcommand{\transp}{^{\mathrm{t}}}
+
+%-------------------------------------------------------------------------------
+
+\title{Compte-rendu classification et mélange}
+
+\author{Benjamin Fradet, Wenting Gu}
+\date{\today}
+
+%-------------------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+%-------------------------------------------------------------------------------
+
+\begin{abstract}
+
+    Ces trois dernières séances de travaux pratiques ont été l'objet de l'étude
+    de la classification automatique et plus particulièrement la méthode des
+    k-means ainsi que les modèles de mélanges gaussiens.
+
+\end{abstract}
+
+%-------------------------------------------------------------------------------
+
+\begin{multicols}{2}
+
+\section{Introduction}\label{sec:intro}
+
+Dans un premier temps, nous allons étudier l'algorithme des k-means et comment
+déterminer le nombre de classes optimal d'un jeu de données si on ne le connaît
+pas a priori. Nous utiliserons le jeu de données \emph{iris} déjà présent dans
+R. Pour rappel, la méthode des k-means part de $K$ individus choisis
+aléatoirement ($K$ étant le nombre de clusters que l'on souhaite obtenir) et les
+assigne comme centroïdes initiaux. Ensuite, elle répète ces deux étapes
+alternativement jusqu'à convergence:
+\begin{itemize}
+    \item Affectation des individus à la classe rattachée au centroïde le plus
+        proche
+    \item Recalcul des centroïdes à partir de la nouvelle partition effectuée
+        dans l'étape précédente
+\end{itemize}
+On arrive à la convergence lorsqu'on obtient une partition qui minimise
+l'inertie intra-classe.
+
+Ensuite, nous nous pencherons sur les modèles de mélange et comment ils peuvent
+être utilisés en classification automatique.
+Dans une première partie, nous développerons les algorithmes EM et CEM et nous
+générerons une variable suivant un mélange de deux lois gaussiennes afin de
+tester l'implémentation de nos algorithmes.
+Enfin, nous appliquerons nos algorithmes nouvellement développés sur un jeu de
+données dont les classes nous sont inconnues, en l'occurrence le jeu de données
+\emph{crabs} présent dans la librairie \texttt{MASS}.
+
+%-------------------------------------------------------------------------------
+
+\section{Exercice 1. Algorithme des k-means}\label{sec:ex1}
+
+\subsection{Partition en $K \in \{ 2, 3, 4 \}$ classes}\label{subsec:parts}
+
+Pour visualiser les partitions en 2, 3 et 4 classes produites par l'algorithme
+des k-means, on choisit d'effectuer une ACP sur les données afin de réduire le
+nombre de variables de 4 à 2. Les deux premiers axes factoriels, qui
+représentent le premier plan factoriel, ont une inertie expliquée cumulée de
+97.77\%, donc notre représentation est tout à fait fidèle.
+
+On choisit d'adopter un code couleur pour mettre en évidence les clusters
+produits par l'algorithme des k-means et différentes formes de points pour
+reconnaître les classes réelles présentes dans le jeu de données initiales.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex1/kmeans2.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:kmeans2}Clusters obtenus par l'algorithme des k-means pour $K =2$}
+    \end{center}
+\end{figure}
+
+On voit que la partition en deux classes a tendance à former un cluster
+regroupant les deux classes réelles de droite. Ceci est dû au fait que les
+individus appartenant à ces deux classes sont plus proches les uns des autres
+par rapport à la classe réelle 1. L'algorithme des k-means positionnera donc les
+centroïdes au milieu des deux nuages de points distincts et affectera un cluster
+distinct aux individus appartenant à ces nuages de points.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex1/kmeans3.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:kmeans3}Clusters obtenus par l'algorithme des k-means pour $K = 3$}
+    \end{center}
+\end{figure}
+
+L'algorithme des k-means retrouve les trois classes naturelles en commettant peu
+d'erreur sur les classes 2 et 3 car elles sont quelque peu confondues.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex1/kmeans4.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:kmeans4}Clusters obtenus par l'algorithme des k-means pour $K = 4$}
+    \end{center}
+\end{figure}
+
+Ici, l'algorithme redivise la classe réelle 1 en deux clusters distincts mais
+préserve les clusters 3 et 4 correspondant aux classes réelles 2 et 3. Cette
+partition n'est pas constante et dépend des centroïdes initiaux.
+
+\subsection{Stabilité de la partition en $K = 3$ classes}\label{subsec:stab}
+
+Si l'on effectue $n = 100$ partitions en $K = 3$ classes par l'algorithme des
+k-means, on obtient les inerties intra-classes suivantes:
+
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:inerties}Répartition des inerties intra-classes}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            Inertie intra-classe & 78.851 & 142.754 \\
+            \hline
+            Occurrence & 88 & 12 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+On voit que l'algorithme des k-means se retrouve "bloqué" dans un minimum local
+d'inertie intra-classe ($142.754$) dans environ 12\% des cas qui ne correspond
+pas au minimum global ($78.851$) qui est, quant à lui, trouvé dans 88\% des cas.
+
+Ceci est dû au fait que l'algorithme choisit initialement k individus comme
+centroïdes et on obtient donc différentes partitions suivant ces centroïdes
+initiaux.
+
+Il est donc nécessaire, comme pour tout algorithme qui optimise un critère, de
+le lancer pour plusieurs itérations et de choisir l'itération où le critère est
+le plus optimisé.
+
+\subsection{Choix du nombre de classes optimales}\label{subsec:choix}
+
+On effectue $n = 100$ partitions en $K \in \{ 2, 3, 4, 5 \}$ classes et on
+calcule l'inertie intra-classe moyenne obtenue:
+
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:avgInerties}Inerties intra-classes moyennes en fonction du nombre de classes}
+        \begin{tabular}{|c|c|}
+            \hline
+            Nombre de clusters K & \pbox{20cm}{Inertie intra-classe \\ moyenne} \\
+            \hline
+            2 & 152.348 \\
+            3 & 87.798 \\
+            4 & 62.822 \\
+            5 & 52.378 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+Si on trace l'inertie intra-classe moyenne en fonction du nombre de clusters K:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex1/methodeCoude.png}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{fig:coude}Inertie intra-classe moyenne en fonction du nombre de clusters}
+\end{center}
+\end{figure}
+
+On note que cette fonction tend vers 0 quand K tend vers n (n étant le nombre
+d'individus). Ceci est normal car si $K = n$ on a autant de classes que
+d'individus et donc une inertie intra-classe nulle, critère que l'on cherche à
+minimiser.
+
+En appliquant la méthode du coude à ces données, on peut choisir 3 comme étant
+le nombre de classes optimal.
+
+\subsection{Comparaison de la partition par l'algorithme des centres mobiles avec la partition réelle}\label{subsec:comparaison}
+
+Pour comparer les deux partitions, on calcule l'indice de Rand qui mesure la
+similarité de deux partitions entre deux ensembles: plus l'indice se rapproche
+de 1 plus les partitions sont similaires.
+
+Etant donné que la partition réelle se fait en trois classes on compare avec la
+classification effectuée par la méthode des k-means avec $K = 3$:
+
+\begin{table}[H]
+\begin{center}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{tab:randIndex}Indices de Rand en fonction des deux partitions obtenues par la méthode des k-means lorsque $K = 3$}
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Inertie intra-classe & 78.851 & 142.754 \\
+        \hline
+        Indice de Rand & 0.880 & 0.721 \\
+        \hline
+    \end{tabular}
+\end{center}
+\end{table}
+
+On retrouve que la qualité de la partition est bien meilleure lorsque l'inertie
+intra-classe est plus faible comme étudié dans la question ~\ref{subsec:stab}.
+
+En résumé, la méthode des k-means respecte les classes naturelles à hauteur de
+88\% lorsqu'elle a convergé vers le minimum d'inertie intra-classe global.
+
+Pour obtenir de meilleurs résultats, on aurait pu aussi imposer un critère sur
+le nombre d'individus par classe étant donné que l'on sait que les $\pi_k$ sont
+égaux dans l'échantillon.
+
+%-------------------------------------------------------------------------------
+
+\section{Exercice 2. Modèles de mélange}\label{sec:ex2}
+
+\subsection{Données synthétiques}\label{subsec:ex21}
+
+\subsubsection{Equations de mise à jour des paramètres $\mu$ et $\sigma$}\label{subsubsec:ex211}
+
+A l'étape $e + 1$, on a:
+
+\begin{equation}
+\mu_k^{(e + 1)} = \frac
+    {\sum_{i = 1}^n t_{ik}^{(e)} \times x_i}
+    {\sum_{i = 1}^n t_{ik}^{(e)}}
+\end{equation}
+\begin{equation}
+\sigma_k^{(e + 1)} = \frac
+    {\sum_{i = 1}^n t_{ik}^{(e)} \times (x_i - \mu_k^{(e + 1)})^2}
+    {\sum_{i = 1}^n t_{ik}^{(e)}}
+\end{equation}
+
+Les $t_{ik}$ étant donnés, à l'étape $e + 1$, par:
+
+\begin{equation}
+t_{ik}^{(e + 1)} = \frac
+    {\pi_k^{(e)} \times f(x_i, \mu_k^{(e)}, \sigma_k^{(e)})}
+    {\sum_{j = 1}^K \pi_j^{(e)} \times f(x_i, \mu_j^{(e)}, \sigma_j^{(e)})}
+\end{equation}
+
+Où $f(x, \mu, \sigma)$ est la fonction de densité de la loi normale.
+
+\subsubsection{Implémentation des algorithmes EM et CEM}\label{subsubsec:ex212}
+
+L'implémentation complète est disponible dans l'annexe ~\nameref{app:em}.
+
+Notre algorithme fonctionne de la manière suivante:
+
+\begin{enumerate}
+\item Centrage et réduction de la variable d'entrée
+\item Choix des paramètres initiaux:
+    \begin{itemize}
+        \item $\pi_k = 1 / K$ où $K$ est le nombre de classes donné en
+            paramètre
+        \item $\mu_k = x$ où $x$ est une réalisation de la variable
+            aléatoire $X \sim \mathscr{U}([-1, 1])$ car nous avons centré la
+            variable d'entrée
+        \item $\sigma_k = 1$ car nous avons réduit la variable d'entrée
+    \end{itemize}
+\item Boucle de mise à jour des paramètres tant que non convergence ou
+    nombre d'itérations supérieur au nombre maximum d'itérations:
+    \begin{enumerate}
+        \item Etape d'estimation: calcul des $t_{ik}$
+        \item Etape de classification si CEM et non EM
+        \item Etape de maximisation: mise à jour des paramètres grâce
+            aux nouveaux $t_{ik}$ et calcul de la nouvelle vraisemblance
+    \end{enumerate}
+\end{enumerate}
+
+\subsubsection{Comparaison des paramètres obtenus par les algorithmes EM et CEM}\label{subsubsec:ex213}
+
+Si on effectue 100 itérations des deux algorithmes (EM et CEM) et que l'on
+choisit l'itération où la log-vraisemblance, après convergence, est maximale, on
+obtient:
+
+\begin{table}[H]
+\begin{center}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{tab:paramComparison}Comparaisons des paramètres obtenus avec les algorithmes EM et CEM par rapport aux paramètres réels}
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        & Paramètres réels & EM & CEM \\
+        \hline
+        $\pi_1$ & 0.487 & 0.474 & 0.416 \\
+        \hline
+        $\pi_2$ & 0.513 & 0.526 & 0.584 \\
+        \hline
+        $\mu_1$ & 0.601 & 0.570 & 0.881 \\
+        \hline
+        $\mu_2$ & -0.633 & -0.632 & -0.627 \\
+        \hline
+        $\sigma_1^2$ & 0.045 & 0.042 & 0.052 \\
+        \hline
+        $\sigma_2^2$ & 1.165 & 1.175 & 1.000 \\
+        \hline
+    \end{tabular}
+\end{center}
+\end{table}
+
+On peut tracer les différentes distributions obtenues:
+
+\begin{figure}[H]
+\begin{center}
+    \includegraphics[width=0.5\textwidth]{ex2/histDensityX.png}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{fig:distX}Distributions des X obtenues à partir des algorithmes EM et CEM par rapport à la distribution réelle}
+\end{center}
+\end{figure}
+
+Pour comparer les valeurs, on peut calculer les pourcentages d'écart:
+
+\begin{table}[H]
+\begin{center}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{tab:percentEcart}Pourcentages d'écart entre les valeurs des paramètres obtenues par l'algorithme EM et CEM par rapport aux paramètres réelles}
+    \begin{tabular}{|c|c|c|}
+        \hline
+        & EM & CEM \\
+        \hline
+        $\pi_1$ & 2.67\% & 14.57\% \\
+        \hline
+        $\pi_2$ & 2.53\% & 13.84\% \\
+        \hline
+        $\mu_1$ & 5.16\% & 46.59\% \\
+        \hline
+        $\mu_2$ & 0.16\% & 0.95\% \\
+        \hline
+        $\sigma_1^2$ & 6.67\% & 15.56\% \\
+        \hline
+        $\sigma_2^2$ & 0.86\% & 14.16\% \\
+        \hline
+    \end{tabular}
+\end{center}
+\end{table}
+
+On voit que l'algoritme EM se rapproche plus des paramètres réels que
+l'algorithme CEM, on peut donc envisager qu'il partitionne mieux les données en
+deux classes. Le problème étant que l'algorithme EM converge en 68 itérations
+tandis que l'algorithme CEM converge en 12.
+
+Tout est donc histoire de compromis, on pourrait, par exemple, privilégier
+l'algorithme CEM si on a beaucoup de données et l'algorithme EM si on en dispose
+de peu.
+
+\subsubsection{Comparaison des partitions obtenues par les algorithmes EM, CEM et k-means}\label{subsubsec:ex214}
+
+Pour étudier les différentes partitions, on calcule l'indice de Rand, comme pour
+~\ref{subsec:comparaison}:
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+\caption{\label{tab:partComparison}Comparaison des partitions obtenues par les algorithmes EM, CEM et k-means}
+\begin{tabular}{|c|c|}
+    \hline
+    & Indice de Rand \\
+    \hline
+    EM & 0.821 \\
+    \hline
+    CEM & 0.818 \\
+    \hline
+    k-means & 0.669 \\
+    \hline
+\end{tabular}
+\end{table}
+
+On voit que, malgré les "faibles" performances de l'algorithme CEM pour ce qui
+est de retrouver la distribution réelle de la variable X par rapport à
+l'algorithme EM, il s'en sort très bien en ce qui concerne la classification.
+Il est donc envisageable de privilégier l'algorithme CEM lorsque l'on est face à
+un problème de classification étant donné qu'il converge plus vite et que
+l'erreur commise, par rapport à l'algorithme EM, sur la classification semble
+faible.
+
+Sur ce jeu de données, l'algorithme des k-means ne semble pas à l'aise. Ceci
+peut être expliqué par le fait que les algorithmes EM et CEM prennent en
+comptent les proportions des individus dans chacune des classes. Etant donné que
+les modèles sont mélangés, on peut supposer l'algorithme des k-means a favorisé
+une classe par rapport à l'autre. Ceci est confirmé si on calcule les $\pi_k$ à
+l'issue de la classification par la méthode des centres mobiles: on obtient
+0.696 pour une classe et 0.304 pour l'autre.
+
+\subsection{Application à des données réeelles}\label{subsec:ex22}
+
+On réalise tout d'abord un histogramme pour les deux premières variables
+(FL et RW), pour s'assurer que nous sommes bien face à des variables qui
+seraient susceptibles d'être distribuées selone un mélange de deux lois
+normales:
+
+\begin{figure}[H]
+\begin{center}
+    \includegraphics[width=0.5\textwidth]{ex2/histFL.png}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{fig:histFL}Histogramme des crabes en fonction de la variable FL après normalisation}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+    \includegraphics[width=0.5\textwidth]{ex2/histRW.png}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{fig:histRW}Histogramme des crabes en fonction de la variable RW après normalisation}
+\end{center}
+\end{figure}
+
+On voit que ces variables semblent suivre un mélange de deux lois normales, on
+reprend donc les algorithmes EM et CEM définis dans ~\ref{subsec:ex21}.
+
+Après 100 itérations de chaque algorithme pour chaque variable, on obtient les
+paramètres suivants:
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+\caption{\label{tab:paramFL}Paramètres obtenus par les algorithmes EM et CEM pour la variable FL}
+\begin{tabular}{|c|c|c|}
+    \hline
+    & EM & CEM \\
+    \hline
+    $\pi_1$ & 0.482 & 0.490 \\
+    \hline
+    $\pi_2$ & 0.518 & 0.510 \\
+    \hline
+    $\mu_1$ & -0.914 & -0.875 \\
+    \hline
+    $\mu_2$ & 0.851 & 0.911 \\
+    \hline
+    $\sigma_1$ & 0.152 & 0.146 \\
+    \hline
+    $\sigma_2$ & 0.278 & 0.248 \\
+    \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+\caption{\label{tab:paramRW}Paramètres obtenus par les algorithmes EM et CEM pour la variable RW}
+\begin{tabular}{|c|c|c|}
+    \hline
+    & EM & CEM \\
+    \hline
+    $\pi_1$ & 0.593 & 0.570 \\
+    \hline
+    $\pi_2$ & 0.407 & 0.430 \\
+    \hline
+    $\mu_1$ & -1.040 & -1.010 \\
+    \hline
+    $\mu_2$ & 0.713 & 0.762 \\
+    \hline
+    $\sigma_1$ & 0.229 & 0.182 \\
+    \hline
+    $\sigma_2$ & 0.291 & 0.283 \\
+    \hline
+\end{tabular}
+\end{table}
+
+On peut donc tracer les distributions liées à ces paramètres sur les
+histogrammes précédents:
+
+\begin{figure}[H]
+\begin{center}
+    \includegraphics[width=0.5\textwidth]{ex2/histDensityFL.png}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{fig:histDFL}Distribution de la variable FL obtenue à partir des algorithmes EM et CEM}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+    \includegraphics[width=0.5\textwidth]{ex2/histDensityRW.png}
+    \centering
+    \captionsetup{justification=centering}
+    \caption{\label{fig:histDRW}Distribution de la variable RW obtenue à partir des algorithmes EM et CEM}
+\end{center}
+\end{figure}
+
+Si on compare les partitions effectuées avec les variables qualitatives
+contenues dans le jeu de données \texttt{crabs} (sexe et espèce) et les
+partitions obtenues par les algorithmes EM et CEM en calculant
+l'indice de Rand sur ces deux partitions, on se rend compte que la
+classification effectuée à partir de la variable FL correspond à l'espèce du
+crabe et que celle effectuée à partir de la variable RW correspond au sexe du
+crabe.
+
+On récapitule les indices de Rand pour les différents cas dans le tableau
+suivant:
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+\caption{\label{tab:rands}Indices de Rand}
+\begin{tabular}{|c|c|c|}
+    \hline
+    & EM & CEM \\
+    \hline
+    FL / Espèces & 0.961 & 0.961 \\
+    \hline
+    RW / Sexes & 0.811 & 0.835 \\
+    \hline
+\end{tabular}
+\end{table}
+
+On peut donc conclure que l'on peut connaître l'espèce d'un crabe si on connaît
+la longueur de son lobe frontal ainsi que son sexe à partir de la largeur de sa
+partie arrière. On pourrait même envisager d'utiliser ces deux variables pour
+prédire le sexe et l'espèce d'un nouveau crabe étant donné la longueur de son
+lobe frontal ainsi que la largeur de sa partie arrière.
+
+De plus, grâce à cette étude, on a pu voir que l'algorithme CEM produit une
+partition de même qualité sinon meilleure que l'algorithme EM en une fraction du
+temps.
+
+%-------------------------------------------------------------------------------
+
+\section{Conclusion}\label{sec:conclu}
+
+Grâce à ces séances de travaux pratiques, nous avons appris deux approches à la
+classification automatique: la méthode des k-means et la classification à partir
+de modèle de mélanges.
+Ces deux méthodes reposant sur l'optimisation d'un critère (la minimisation de
+l'inertie intra-classe pour la méthode des k-means, la maximisation de la
+vraisemblance observée pour l'algorithme EM et CEM), il est nécessaire de
+répéter ces algorithmes pendant un grand nombre d'itérations afin de choisir,
+parmi celles-ci, celle qui optimise le plus le critère pour obtenir les
+meilleurs résultats possibles, ceci afin d'éviter des optimums locaux.
+
+Nous avons aussi eu l'occasion de voir les limitations de l'algorithme des
+k-means, notamment le fait de devoir déterminer le nombre de classes en testant
+l'algorithme avec plusieurs $K$ tandis que, pour l'algorithme d'estimation-
+maximisation, le nombre de classes est directement donné par un simple
+histogramme dans le cas d'une unique variable.
+
+Pour continuer notre étude, on aurait pu comparer les performances de ces deux
+méthodes de manière plus complète, notamment sur le jeu de données des crabes
+(où l'algorithme des k-means produit de meilleurs résultats que l'algorithme
+EM à partir de la variable FL par rapport à l'espèce et vice-versa pour la
+variable RW par rapport à la partition suivant le sexe du crabe). Enfin, il
+aurait été intéressant d'étendre l'implémentation de notre fonction EM à des
+données multidimensionnelles. Dans le cas des crabes, on aurait pu, par exemple,
+combiner les variables FL et RW pour voir si les partitions produites auraient
+été plus conformes aux partitions réelles.
+
+%-------------------------------------------------------------------------------
+
+\appendix
+
+\section{Fonction EM / CEM}\label{app:em}
+
+\lstset{
+caption=Fonction EM / CEM,
+breaklines=true,
+basicstyle=\footnotesize,
+tabsize=1,
+breakatwhitespace=true,
+keywordstyle=\color{blue},
+commentstyle=\color{green},
+stringstyle=\color{mauve}
+}
+\lstinputlisting[language=Python]{ex2/emWithoutComments.R}
+
+%-------------------------------------------------------------------------------
+
+\end{multicols}
+\end{document}
