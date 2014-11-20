@@ -1,0 +1,640 @@
+% !TEX encoding = IsoLatin
+%\documentclass[twoside]{article}
+\documentclass{article}
+\usepackage[french]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry}
+\usepackage{multirow}
+\usepackage{multicol} % Style double colonne
+\usepackage{abstract} % Customization de l'abstract
+\usepackage{fancyhdr} % en-têtes et pieds de page
+\usepackage{float} % Nécessaire pour les tables et figures dans l'environnement
+%double colonne
+
+\usepackage[colorlinks=true,linkcolor=red,urlcolor=blue,filecolor=green]{hyperref}
+% hyperliens
+
+\usepackage{dtklogos}
+\usepackage{pbox}
+\usepackage{caption}
+\usepackage{mathtools}
+\usepackage{listings}
+
+% En-têtes et pieds de page
+\pagestyle{fancy}
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+\fancyhead[C]{TP 1: Positionnement multidimensionnel} % Custom header text
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+
+\newcommand{\bfx}{\mathbf{x}}
+\newcommand{\transp}{^{\mathrm{t}}}
+
+
+%----------------------------------------------------------------------------------------
+
+\title{Compte-rendu positionnement dimensionnel}
+
+\author{Benjamin Fradet, Wenting Gu}
+\date{\today}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Insert title
+
+\thispagestyle{fancy} % All pages have headers and footers
+
+
+%----------------------------------------------------------------------------------------
+
+\begin{abstract}
+
+Durant ces trois scéances de travaux pratiques, nous avons étudier l'analyse en
+composantes principales et l'analyse factorielle d'un tableau de distances.
+
+\end{abstract}
+
+
+%----------------------------------------------------------------------------------------
+
+\begin{multicols}{2} % Style double colonne
+
+\section{Introduction}\label{sec:intro}
+
+Dans une première partie, nous allons implémenter mathématiquement l'analyse en
+composantes principales ainsi que l'analyse factorielle d'un tableau de
+distances et tester ces méthodes nouvellement dévelopées sur un jeu de données
+très simple.
+Ensuite, nous nous concentrerons sur l'AFTD et nous étudierons plus spécialement
+les projections de Kruskal et Sammon sur des jeux de données plus conséquents:
+\begin{itemize}
+    \item \emph{mutations2.txt} qui représente différentes distances entre
+        espèces animales et végétales selon certaines caractéristiques
+    \item \emph{airports2.txt} qui répertorie les distances de vol entre
+        différents aéroports à travers le monde
+\end{itemize}
+Ces jeux de données consistent en des matrices de dissimilarités: carrées et
+symmétriques où l'élément à la $i^e$ ligne et $j^e$ colonne représente à quel
+point l'individu $i$ et l'individu $j$ se ressemblent (une plus grande valeur
+décrit le fait que les deux individus ne se ressemblent pas).
+
+Pour rappel, l'AFTD est une méthode de positionnement multidimensionnel qui
+permet une représentation des différentes relations entre individus à
+partir d'un tableau de similarités ou de dissimilarités. L'intérêt est donc de
+pouvoir représenter des relations complexes entre individus dans un plan.
+
+A l'inverse, l'ACP a pour but de visualiser des données en définissant des
+nouvelles variables, combinaisons linéaires des variables initiales. On en
+choisit alors quelques-unes (souvent deux ou trois si on reste dans une optique
+de visualisation, sinon plus si on est dans une logique de réduction
+dimensionnelle) qui se doivent d'être les plus représentatives.
+
+%------------------------------------------------
+
+\section{Exercice 1. Exercice theorique}\label{sec:ex1}
+
+\subsection{Premiere partie: ACP}\label{subsec:ex1ACP}
+
+\subsubsection{Calcul des axes factoriels et des pourcentages d'inertie expliquée}\label{subsubsec:ex1ACP1}
+
+En prétraitement des données, il est tout d'abord nécessaire de centrer le
+tableau de données en colonnes. Cette nouvelle matrice $X$ permet de placer
+l'origine du repère multidimensionnel au niveau du centre de gravité du nuage de
+points des données initiales.
+Une fois la matrice $X$ centrée en colonne, elle devient:
+\begin{equation}
+    X = \begin{pmatrix*}[r]
+        2.75 & -2.4375 \\
+        -2.25 & 1.0625 \\
+        -3.75 & 2.5625 \\
+        3.75 & -2.4375 \\
+        2.75 & -1.4375 \\
+        -2.75 & 2.5625 \\
+        3.25 & -1.4375 \\
+        -3.75 & 1.5625
+    \end{pmatrix*}
+\end{equation}
+Ensuite, nous avons calculé la matrice de covariance de cette-ci. La fonction
+\texttt{eigen} prend en argument cette dernière et permet de calculer les
+valeurs et vecteurs propres. Les vecteurs obtenus déterminent les axes
+factoriels.
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:axesFact}Les deux premiers axes factoriels / vecteurs propres}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            & U1 & U2 \\
+            \hline
+            1 & -0.847 & -0.531 \\
+            \hline
+            2 & 0.531 & -0.847 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+Les inerties expliquées par les axes sont présentées dans le tableau suivant.
+Leur somme est approximativement égale à 100\% ce qui signifie que ces deux axes
+factoriels donnent une représentention fidèle des données.
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:percentInertia}Pourcentages d'inertie expliquée}
+        \begin{tabular}{|c|c|}
+            \hline
+             & \% d'inertie expliquée \\
+            \hline
+            Axe factoriel 1 & 98.45\% \\
+            \hline
+            Axe factoriel 2 & 1.55\% \\
+            \hline
+            \pbox{20cm}{\% d'inertie expliquée \\ accumulée} & 100\% \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+\subsubsection{Calcul des composantes principales}\label{subsubsec:ex1ACP2}
+
+On obtient les composantes principales dans le tableau ci-dessous grâce à la
+formule $C = XU$.
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:comps}Composantes principales}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            & Composante 1 & Composante 2 \\
+            \hline
+            1 & -3.6247611 & 0.60416263 \\
+            \hline
+            2 &  2.470688 &  0.29513738 \\
+            \hline
+            3 & 4.538384  & -0.17881787 \\
+            \hline
+            4 & -4.471978  & 0.07291574 \\
+            \hline
+            5 & -3.093514  & -0.24305443 \\
+            \hline
+            6 &  3.691167 & -0.71006476 \\
+            \hline
+            7 & -3.517123  & -0.50867788 \\
+            \hline
+            8 & 4.007137  & 0.66839919 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+Si l'on représente les huit individus dans le premier plan factoriel, on
+obtient:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex1/pca.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:acp}Représentation des huit individus dans le premier plan factoriel}
+    \end{center}
+\end{figure}
+On voit que l'ACP a tendance à minimiser l'effet d'un axe, et étant donnée que
+l'on avait 98.45\% d'inertie expliquée par le premier axe, il est envisageable
+de représenter ces données uniquement dans $\mathbb{R}$.
+
+\subsubsection{Calcul de $\sum_{\alpha=1}^{k} c_{\alpha} u_{\alpha}^{'}$}
+
+Pour $k=1$:
+\begin{equation}
+    \resizebox{.8\hsize}{!}{$
+        \sum_{\alpha=1}^{1} c_{\alpha} u_{\alpha}^{'} =
+        c_{1} u_{1}^{'} = \\
+        \begin{pmatrix*}[r]
+            3.07 & -1.92 \\
+            -2.09 & 1.31 \\
+            -3.84 & 2.41 \\
+            3.79 & -2.38 \\
+            2.62 & -1.64 \\
+            -3.13 & 1.96 \\
+            2.98 & -1.87 \\
+            -3.39 & -1.86
+        \end{pmatrix*}
+    $}
+\end{equation}
+On voit que l'on se rapproche de la matrice initiale $X$ une fois centrée en
+colonne définie dans la question 1~\ref{subsubsec:ex1ACP1}.
+
+Si on calcule pour $k=2$:
+\begin{equation}
+    \resizebox{.8\hsize}{!}{$
+        \sum_{\alpha=1}^{2} c_{\alpha} u_{\alpha}^{'} =
+        c_{1} u_{1}^{'} + c_{2} u_{2}^{'} =
+        \begin{pmatrix*}[r]
+            2.75 & -2.4375 \\
+            -2.25 & 1.0625 \\
+            -3.75 & 2.5625 \\
+            3.75 & -2.4375 \\
+            2.75 & -1.4375 \\
+            -2.75 & 2.5625 \\
+            3.25 & -1.4375 \\
+            -3.75 & 1.5625
+        \end{pmatrix*}
+    $}
+\end{equation}
+On retrouve exactement la matrice initiale $X$ centrée en colonne définie dans la
+question 1~\ref{subsubsec:ex1ACP1}.
+
+\subsection{Deuxieme partie: MDS}\label{subsec:ex1MDS}
+
+\subsubsection{Calcul du tableau $D^2$}\label{subsubsec:ex1MDS1}
+
+On calcule $D^2$ en transformant $X$ en une matrice de distance:
+
+\texttt{dSquared <- as.matrix(dist(X)$^2$)}
+
+\begin{equation}
+    \resizebox{.8\hsize}{!}{$
+        D^{2} =
+        \begin{pmatrix*}[r]
+            0 \\
+            37.25 & 0 \\
+            67.25 & 4.5 & 0 \\
+            1 & 48.25 & 81.25 & 0 \\
+            1 & 31.25 & 58.25 & 2 & 0 \\
+            55.25 & 2.5 & 1 & 67.25 & 46.25 & 0 \\
+            1.25 & 36.5 & 65 & 1.25 & 0.25 & 52 & 0 \\
+            58.25 & 2.5 & 1 & 72.25 & 51.25 & 2 & 58 & 0
+        \end{pmatrix*}
+    $}
+\end{equation}
+
+\subsubsection{Calcul de la matrice $W$}\label{subsubsec:ex1MDS2}
+
+On peut calucler $W$ via la matrice $X$:
+\begin{equation}
+    W = X X{'}
+\end{equation}
+Ou via la matrice $D^2$:
+\begin{equation}
+    W = \frac{-1}{2} Q_{n} D^{2} Q_{n}
+\end{equation}
+Dans les deux cas, on obtient le même résultat:
+\begin{equation}
+    \resizebox{.8\hsize}{!}{$
+        W =
+        \begin{pmatrix*}[r]
+            13.50 \\
+            -8.77 & 6.19 \\
+            -16.56 & 11.16 & 20.63 \\
+            16.25 & -11.03 & -20.31 & 20 \\
+            11.07 & -7.71 & -14 & 13.82 & 9.63 \\
+            -13.81 & 8.91 & 16.88 & -16.56 & -11.25 & 14.13 \\
+            12.44 & -8.83 & -15.87 & 15.69 & 11 & -12.62 & 12.63 \\
+            -14.12 & 10.1 & 18.07 & -17.87 & -12.56 & 14.32 & -14.43 & 16.5
+        \end{pmatrix*}
+    $}
+\end{equation}
+
+\subsubsection{$\frac{1}{n} W$ semi définie positive}\label{subsubsec:ex1MDS3}
+
+Pour s'assurer que $\frac{1}{n} W$ est semi définie positive on calcule ses
+valeurs propres et on vérifie qu'elles sont supérieures ou égales à 0 à l'aide
+de la fonction \texttt{eigen}. Après vérification, cette matrice est en effet
+semi définie positive.
+
+\subsubsection{Détermination des matrices V et L}\label{subsubsec:ex1MDS4}
+
+On récupère la matrice des vecteurs propres $V$ grâce à la fonction
+\texttt{eigen} utilisée dans la question précédente~\ref{subsubsec:ex1MDS3}.
+On construit la matrice $L$ en remplissant la diagonale d'une matrice remplie de
+0 par les valeurs propres de la matrice $\frac{1}{n} W$.
+
+\subsubsection{Représentation de l'AFTD}\label{subsubsec:ex1MDS5}
+
+Pour obtenir la représentation de l'AFTD, il nous suffit de calculer ses points:
+\begin{equation}
+    points = V \sqrt{L}
+\end{equation}
+
+\subsubsection{Visualisation de l'AFTD}\label{subsubsec:ex1MDS6}
+
+Si on représente le nuage initial par rapport à la représentation de l'AFTD:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex1/aftd.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:sammon}Représentation de l'AFTD}
+    \end{center}
+\end{figure}
+
+\subsubsection{Programmation de la fonction \texttt{aftd}}\label{subsubsec:ex1MDS7}
+
+Nous avons choisi de définir notre fonction \texttt{aftd} de la manière
+suivante:
+\lstset{
+    caption=Fonction AFTD,
+    breaklines=true,
+    basicstyle=\footnotesize,
+    tabsize=2,
+    breakatwhitespace=true,
+    keywordstyle=\color{blue},
+    commentstyle=\color{dkgreen},
+    stringstyle=\color{mauve}
+}
+\lstinputlisting{ex2/aftdWithoutComs.R}
+
+%------------------------------------------------
+
+\section{Exercice 2. Les donnees de mutations}\label{sec:ex2}
+
+\subsection{Comparaison fonction \texttt{aftd} et \texttt{cmdscale}}\label{subsec:ex21}
+
+Si on effectue l'AFTD via notre fonction \texttt{aftd} d'une part et avec la
+fonction \texttt{cmdscale} d'autre part:
+
+\texttt{aftd1 <- aftd(mutations)}
+
+\texttt{aftd2 <- cmdscale(mutations, k = 2, eig = T)}
+
+On obtient les memes inerties expliquées par les deux premiers axes si on
+enlève les valeurs propres négatives.
+En supposant les valeurs propres triées par ordre décroissant:
+\begin{equation}
+    qualite = 100 \times \frac{\lambda_1 + \lambda_2}
+        {\sum_{i=1, \lambda_i > 0}^{n} \lambda_i} =
+        69.66
+\end{equation}
+A noter qu'une valeur de $70\%$ nous permet d'affirmer qu'une représentation
+dans deux dimensions sera de relativement bonne qualité.
+On se doute que la relation entre des especes peut difficilement se representer
+dans deux dimensions.
+De plus, si on compare les représentations elles-mêmes à l'aide de:
+
+\texttt{all.equal(abs(aftd1\$points),\\
+    \-\hspace{2cm} abs(aftd2\$points),\\
+    \-\hspace{2cm} check.attributes = F)}
+
+On se rend compte qu'elles sont identiques à une tolérance et au signe près. La
+différence de signe dans la représentation de certains individus suggère une
+symmétrie selon un axe. Cela ne pose pas de problème étant donné que l'AFTD
+reste inchangée face aux isométries.
+
+\subsection{Visualisation grâce aux projections de Kruskal et Sammon}\label{subsec:ex22}
+
+Etant donné que les deux AFTD sont équivalentes selon la question précédente
+~\ref{subsec:ex21}, nous choisissons de projeter les données produites par notre
+fonction \texttt{aftd}.
+
+En ce qui concerne la projection de Sammon, elle consiste à minimiser le stress
+defini de la manière suivante:
+\begin{equation}
+    stress_{Sammon} =
+        \frac{1}{\sum_{i < j}^{n} d_{ij}^{*}} \times
+        \sum_{i < j}^{n} \frac{(d^{*}_{ij} - d_{ij})^2}{d_{ij}^{*}}
+\end{equation}
+Où:
+\begin{itemize}
+    \item \emph{$d_{ij}^{*}$} designe la distance entre le $i^e$ et le $j^e$
+        objet dans l'espace d'origine
+    \item \emph{$d_{ij}$} designe la distance entre le $i^e$ et le $j^e$ dans
+        l'espace projeté
+\end{itemize}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex2/sammon.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:sammon}Projection de Sammon}
+    \end{center}
+\end{figure}
+Intuitivement, cette projection semble correspondre à ce à quoi on pouvait
+s'attendre avec notamment les insectes relativement proches l'un de l'autre,
+l'âne proche du cheval ou encore l'homme proche du singe.
+On note que le stress après convergence (environ 70 itérations) vaut $0.024$,
+on peut donc conclure à une représentation fidèle étant donné un stress
+inférieur à $0.1$.
+
+Pour ce qui est de la projection de Kruskal, elle relâche les différences entre
+la dissimilarité initiale et la distance obtenue, le stress à minimiser est:
+\begin{equation}
+    stress_{Kruskal} =
+        \sqrt{\sum_{i < j}^{n}
+            \frac{(d_{ij} - d_{ij}^{*})^2}{d_{ij}^2}}
+\end{equation}
+D'après la formule, on peut inférer que l'algorithme a tendance à exacerber les
+distances entres les groupes (du fait de son dénominateur, que l'algorithme aura
+tendance à maximiser) d'une part, et rapprocher les individus qui étaient déjà
+proches dans le tableau de distances initial d'autre part.
+Notre intuition se confirme lorsque l'on visualise les résultats:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex2/kruskal.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:kruskal}Projection de Kruskal}
+    \end{center}
+\end{figure}
+Dans le cas de Kruskal, on obtient un stress après convergence (environ 40
+itérations) valant $0.008$.
+
+L'AFTD, qui, pour rappel, sert uniquement de point de départ aux deux
+algorithmes peut être représentée de la manière suivante:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex2/aftd.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:aftd}Représentation de l'AFTD}
+    \end{center}
+\end{figure}
+On remarque que la projection de Sammon conserve l'aspect initial en accentuant
+les différences présentes initalement. Au contraire, la projection de Kruskal a
+tendance à rapprocher les individus déjà proches au départ et à mettre en
+évidence des groupes d'individus.
+
+\subsection{Diagrammes de Shepard}\label{subsec:ex23}
+
+Les diagrammes de Shepard nous permettent de visualiser les différences entre
+les distances présentes dans le tableau initial et les distances construites par
+l'AFTD et les projections de Sammon et Kruskal pour chaque paire d'individus.
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex2/shepard.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:shepard}Diagrammes de Shepard}
+    \end{center}
+\end{figure}
+La fonction représentée est monotone croissante car nos données initiales sont
+des dissimilarités et non des similarités.
+On distingue une droite pour la représentation de l'AFTD et la projection de
+Sammon car ce sont des méthodes métriques alors que la projection de Kruskal est
+une méthode non métrique.
+La distance verticale entre la fonction et les points représente l'écart entre
+les distances originelles et les distances transformées.
+
+La projection de Sammon semble respecter le plus les dissimilarités initiales
+étant donné que le diagramme de Shepard associé suit la ligne d'équation
+$y = x$ et que les points initiaux sont uniformément répartis autour des points
+produits.
+En revanche, la projection de Kruskal a réduit les distances entre les points à
+0 mais on perd en qualité car les points ne suivent pas du tout la droite
+d'équation $y = x$.
+
+%-----------------------------------------------
+
+\section{Exercice 3. Les données de distances entre aéroports}\label{sec:ex3}
+
+\subsection{AFTD}\label{subsec:ex31}
+
+Si on effectue l'AFTD sur ce jeu de données on peut calculer la qualité de notre
+représentation si on se limite au premier plan:
+\begin{equation}
+    qualite = 100 \times \frac{\lambda_1 + \lambda_2}
+        {\sum_{i=1, \lambda_i > 0}^{n} \lambda_i} =
+        72.83
+\end{equation}
+Etant donné que le tableau de distances représente les distances physiques
+entre les aéroports à travers le monde, on se doute qu'une représentation dans
+un plan ne colle pas particulièrement efficacement à la réalité. En effet, si on
+mesure la qualité de notre représentation si on l'effectuait en trois dimensions:
+\begin{equation}
+    qualite = 100 \times \frac{\lambda_1 + \lambda_2 + \lambda_3}
+        {\sum_{i=1, \lambda_i > 0}^{n} \lambda_i} =
+        95.72
+\end{equation}
+On voit qu'une representation dans l'espace aurait été nettement plus
+appropriée.
+
+Si on visualise les données, on voit qu'on obtient une représentation malgré
+tout plutôt fidèle:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex3/airportsAftd.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:aftdAirports}Représentation de l'AFTD}
+    \end{center}
+\end{figure}
+On voit que les aéroports sont regroupés géographiquement, on peut discerner un
+groupe européen, un groupe pour le Moyen-orient, l'Asie, l'Australie et les
+Amériques.
+
+\subsection{Projections de Sammon et Kruskal}\label{subsec:ex32}
+
+Si on effectue une projection de ces données selon les algorithmes de Sammon et
+Kruskal:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex3/airportsSammon.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:sammonAirports}Projection de Sammon}
+    \end{center}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex3/airportsKruskal.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:kruskalAirports}Projection de Kruskal}
+    \end{center}
+\end{figure}
+On note que la projection de Kruskal est identique à la représentation de
+l'AFTD. Ceci est dû au fait que l'algorithme de Kruskal a convergé dès la
+premiere itération et le stress était déjà minimisé initialement (20.61).
+En ce qui concerne la projection de Sammon, elle est quelque peu modifiée, elle
+a été capable de discerner quelques villes en Amérique du sud ainsi qu'en
+Afrique. Ceci est dû au fait que la fonctin de stress employée par l'algorithme
+de Sammon pénalise plus les erreurs commises sur les plus petites distances.
+Cette représentation est plus proche de la realité d'un planisphère qui est une
+représentation déjà imparfaite du globe.
+
+\subsection{Restriction aux aeroports europeens}\label{subsec:ex33}
+
+Si on effectue l'AFTD en se restreignant aux aéroports européens (Athènes,
+Berlin, Copenhague, Dublin, Londres, Madrid, Paris, Rome, Vienne) on obtient la
+représentation suivante dans un espace à deux dimensions:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex3/europeansAirportsAftd.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:aftdEUAirports}Resprésentation de l'AFTD des aéroports européens}
+    \end{center}
+\end{figure}
+On voit que la représentation semble plus fidèle à la réalité géographique à une
+isométrie près. Notre intuition se révèle vraie si on calcule la qualité de la
+représentation dans le plan:
+\begin{equation}
+    qualite = 100 \times \frac{\lambda_1 + \lambda_2}
+        {\sum_{i=1, \lambda_i > 0}^{n} \lambda_i} =
+        99.93
+\end{equation}
+Ceci est dû au fait que l'approximation de l'Europe par un plan est plus
+réaliste que l'approximation par un plan du globe entier.
+
+Si on effectue une projection de ses données selon les algorithmes de Sammon et
+Kruskal:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex3/europeansAirportsSammon.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:sammonEUAirports}Projection de Sammon des aéroports européeens}
+    \end{center}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ex3/europeansAirportsKruskal.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:kruskalEUAiports}Projection de Kruskal des aéroports européeens}
+    \end{center}
+\end{figure}
+La représentation de l'AFTD initiale étant tellement précise, le stress est nul
+lors de la première itération des algorithmes de Kruskal et Sammon, les
+projections sont donc identiques à la représentation de l'AFTD.
+
+%------------------------------------------------
+
+\section{Conclusion}\label{sec:conclu}
+
+Ce TP nous a permis de mettre en oeuvre mathématiquement l'ACP et l'AFTD plutôt
+que d'utiliser des fonctions déjà définies dans R comme \texttt{princomp} et
+\texttt{cmdscale}.
+On a également pu visualiser les différentes projections de Sammon et Kruskal et
+comment elles se comportent vis-à-vis des dissimilarités initiales ainsi que
+leurs limites.
+
+
+Toutefois, quelques améliorations auraient pu être apportées à notre étude.
+En particulier, nous aurions pu déterminer le nombre de dimensions pour nos
+différentes représentations grâce à la méthode du coude en affichant le stress
+atteint après convergence en fonction du nombre de dimensions imposé.
+
+De plus, étant donné que la projection de Kruskal sur les données mutations
+avait exposé un groupe qui semblent rassembler les êtres vivants, il aurait été
+intéressant de les isoler et d'effectuer l'AFTD et les projections de Sammon et
+Kruskal sur ce sous-ensemble.
+
+Enfin, on aurait pu améliorer notre fonction \texttt{aftd} afin de la rendre
+plus robuste, on aurait pu notamment tester les données en entrées pour
+s'assurer que le paramètre $D$ représentait une matrice de distance.
+
+%------------------------------------------------
+
+\end{multicols}
+
+\end{document}
