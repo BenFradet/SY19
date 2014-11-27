@@ -1,3 +1,5 @@
+library(nnet)
+
 p1 <- 0.25
 p2 <- 0.25
 p3 <- 0.25
@@ -44,9 +46,47 @@ Z <- cbind(Z, p3 * dnorm(grid[, 1], m[3, 1], s[3, 1]) *
 Z <- cbind(Z, p4 * dnorm(grid[, 1], m[4, 1], s[4, 1]) *
            dnorm(grid[, 2], m[4, 2], s[4, 2]))
 
+pngName <- 'bayes.png'
+png(pngName)
+plot.new()
 zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
 contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
 zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
 contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
 zp <- Z[, 2] - pmax(Z[, 1], Z[, 3], Z[, 4])
 contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+dev.off()
+cat(pngName, 'sauvegardee\n')
+
+# neural net
+t <- class.ind(color)
+
+proba <- c()
+set.seed(1)
+for (i in 1:10) {
+    pngName <- paste('nnet', i, 'HiddenNeurones.png', sep = '')
+    model <- nnet(x, t, size = i, decay = 0, softmax = T, maxit = 500)
+
+    T <- predict(model, x)
+    classT <- round(T)
+    count <- 0
+    for (j in 1:n) {
+        if (!all(classT[j, ] == t[j, ])) {
+            count <- count + 1
+        }
+    }
+    proba[i] <- count / length(classT)
+    cat('proba:', proba[i], '\n')
+
+    Z <- predict(model, grid)
+
+    plot.new()
+    zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
+    contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+    zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
+    contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+    zp <- Z[, 2] - pmax(Z[, 1], Z[, 3], Z[, 4])
+    contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+    dev.off()
+    cat(pngName, 'sauvegardee\n')
+}
