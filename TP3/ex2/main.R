@@ -1,4 +1,7 @@
 library(nnet)
+library(neuralnet)
+
+source('plotnn.R')
 
 p1 <- 0.25
 p2 <- 0.25
@@ -27,8 +30,6 @@ color[c == 2] <- 'blue'
 color[c == 3] <- 'green'
 color[c == 4] <- 'yellow'
 
-plot(x, col = color)
-
 # Bayes border
 len <- 50
 
@@ -48,7 +49,7 @@ Z <- cbind(Z, p4 * dnorm(grid[, 1], m[4, 1], s[4, 1]) *
 
 pngName <- 'bayes.png'
 png(pngName)
-plot.new()
+plot(x, col = color)
 zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
 contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
 zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
@@ -61,11 +62,22 @@ cat(pngName, 'sauvegardee\n')
 # neural net
 t <- class.ind(color)
 
+# viz
+neuralnetData <- as.data.frame(x)
+neuralnetData <- cbind(x, c)
+colnames(neuralnetData) <- c('x1', 'x2', 'color')
+neuralnetModel <- neuralnet(color ~ x1 + x2, data = neuralnetData, hidden = 5)
+pngName <- 'neuralnetViz.png'
+png(pngName)
+plot(neuralnetModel)
+dev.off()
+cat(pngName, 'sauvegardee\n')
+
 proba <- c()
 set.seed(1)
 for (i in 1:10) {
-    pngName <- paste('nnet', i, 'HiddenNeurones.png', sep = '')
-    model <- nnet(x, t, size = i, decay = 0, softmax = T, maxit = 500)
+    model <-
+        nnet(x, t, size = i, decay = 0, softmax = T, maxit = 500, trace = F)
 
     T <- predict(model, x)
     classT <- round(T)
@@ -80,7 +92,9 @@ for (i in 1:10) {
 
     Z <- predict(model, grid)
 
-    plot.new()
+    pngName <- paste('nnet', i, 'HiddenNeurones.png', sep = '')
+    png(pngName)
+    plot(x, col = color)
     zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
     contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
     zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
@@ -90,3 +104,37 @@ for (i in 1:10) {
     dev.off()
     cat(pngName, 'sauvegardee\n')
 }
+
+for (i in 1:6) {
+    decay <- 0.0001 * 10 ^ i
+    model <-
+        nnet(x, t, size = 5, decay = decay, softmax = T, maxit = 500, trace = F)
+
+    T <- predict(model, x)
+    classT <- round(T)
+
+    Z <- predict(model, grid)
+
+    pngName <- paste('nnet', decay, 'Decay.png', sep = '')
+    png(pngName)
+    plot(x, col = color)
+    zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
+    contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+    zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
+    contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+    zp <- Z[, 2] - pmax(Z[, 1], Z[, 3], Z[, 4])
+    contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
+    dev.off()
+    cat(pngName, 'sauvegardee\n')
+}
+
+pngName <- 'probaSize.png'
+png(pngName)
+plot(c(1:10), proba,
+     type = 'b',
+     main = paste('Probabilite d\'erreur empirique en fonction\n',
+                  'du nombre de neurones dans la couche cachee', sep = ''),
+     xlab = 'Nombre de neurones dans la couche cachee',
+     ylab = 'Probabilite d\'erreur empirique')
+dev.off()
+cat(pngName, 'sauvegardee\n')
