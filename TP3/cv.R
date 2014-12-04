@@ -1,12 +1,13 @@
 runCV <- function(x, t, k, nk, hidden, decay) {
-    proba <- c()
+    probas <- c()
+    models <- list()
     for (i in 1:5) {
         range <- c(((i - 1) * nk + 1):(i * nk))
         xCV <- x[-range, ]
         tCV <- t[-range, ]
         xTest <- x[range, ]
         tTest <- t[range, ]
-        model <- nnet(xCV, tCV, size = hidden, decay = decay, softmax = T,
+        models[[i]] <- nnet(xCV, tCV, size = hidden, decay = decay, softmax = T,
                       maxit = 500, trace = F)
         tPredicted <- round(predict(model, xTest))
         count <- 0
@@ -15,8 +16,12 @@ runCV <- function(x, t, k, nk, hidden, decay) {
                 count <- count + 1
             }
         }
-        proba[i] <- count / nk
+        probas[i] <- count / nk
     }
-    error <- sum(nk * proba) / n
-    return(error)
+    error <- sum(nk * probas) / n
+
+    res <- NULL
+    res$error <- error
+    res$model <- models[[which.min(probas)]]
+    return(res)
 }
