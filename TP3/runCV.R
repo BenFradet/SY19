@@ -1,7 +1,7 @@
 runCV <- function(x, t, k, nk, hidden, decay) {
     probas <- c()
     models <- list()
-    for (i in 1:5) {
+    for (i in 1:k) {
         range <- c(((i - 1) * nk + 1):(i * nk))
         xCV <- x[-range, ]
         tCV <- t[-range, ]
@@ -9,7 +9,7 @@ runCV <- function(x, t, k, nk, hidden, decay) {
         tTest <- t[range, ]
         models[[i]] <- nnet(xCV, tCV, size = hidden, decay = decay, softmax = T,
                       maxit = 500, trace = F)
-        tPredicted <- round(predict(model, xTest))
+        tPredicted <- round(predict(models[[i]], xTest))
         count <- 0
         for (j in 1:nk) {
             if (!all(tTest[j, ] == tPredicted[j, ])) {
