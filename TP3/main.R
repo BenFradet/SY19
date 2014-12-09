@@ -67,6 +67,11 @@ neuralnetData <- as.data.frame(x)
 neuralnetData <- cbind(x, c)
 colnames(neuralnetData) <- c('x1', 'x2', 'color')
 neuralnetModel <- neuralnet(color ~ x1 + x2, data = neuralnetData, hidden = 5)
+pngName <- 'boxplotWeights.png'
+png(pngName)
+boxplot(unlist(neuralnetModel$weights[[1]]))
+dev.off()
+cat(pngName, 'sauvegardee')
 pngName <- 'neuralnetViz.png'
 png(pngName)
 plot(neuralnetModel)
@@ -90,11 +95,27 @@ for (i in 1:10) {
     proba[i] <- count / length(classT)
     cat('proba:', proba[i], '\n')
 
+    if (i == 5) {
+        pngName <- 'histWeights2.png'
+        print(model$wts)
+        png(pngName)
+        hist(model$wts,
+             xlab = 'Poids du réseau de neurones',
+             ylab = 'Fréquence',
+             main = paste('Histogramme de la distribution',
+                          'des poids du réseau de neurones', sep = '\n'))
+        dev.off()
+        cat(pngName, 'sauvegardee\n')
+    }
+
     Z <- predict(model, grid)
 
     pngName <- paste('nnet', i, 'HiddenNeurones.png', sep = '')
     png(pngName)
-    plot(x, col = color)
+    plot(x, col = color,
+         xlab = 'x1',
+         ylab = 'x2',
+         main = paste('Frontieres de decision pour size =', i, 'et decay = 0'))
     zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
     contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
     zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
@@ -105,19 +126,27 @@ for (i in 1:10) {
     cat(pngName, 'sauvegardee\n')
 }
 
-for (i in 1:6) {
-    decay <- 0.0001 * 10 ^ i
+decays <- 0.0001 * 10 ^ c(1:6)
+weights <- list()
+index <- 1
+for (decay in decays) {
     model <-
         nnet(x, t, size = 5, decay = decay, softmax = T, maxit = 500, trace = F)
+
+    weights[[index]] <- model$wts
+    index <- index + 1
 
     T <- predict(model, x)
     classT <- round(T)
 
     Z <- predict(model, grid)
 
-    pngName <- paste('nnet', decay, 'Decay.png', sep = '')
+    pngName <- paste('nnet', decay * 1000, 'Decay.png', sep = '')
     png(pngName)
-    plot(x, col = color)
+    plot(x, col = color,
+         xlab = 'x1',
+         ylab = 'x2',
+         main = paste('Frontieres de decision pour size = 5 et decay =', decay))
     zp <- Z[, 4] - pmax(Z[, 1], Z[, 3], Z[, 2])
     contour(xp, yp, matrix(zp, len), add = TRUE, levels = 0, drawlabels = FALSE)
     zp <- Z[, 1] - pmax(Z[, 2], Z[, 3], Z[, 4])
@@ -127,6 +156,19 @@ for (i in 1:6) {
     dev.off()
     cat(pngName, 'sauvegardee\n')
 }
+
+# boxplot of the evolution of the weights with the values of decay
+pngName <- 'boxplotsWeights.png'
+png(pngName)
+boxplot(weights[[1]], weights[[2]], weights[[3]], weights[[4]], weights[[5]],
+        weights[[6]],
+        names = decays,
+        xlab = 'Valeurs du parametre decay',
+        ylab = 'Poids',
+        main = paste('Boites a moustaches des poids du reseau de neurones',
+                     'en fonction de decay', sep = '\n'))
+dev.off()
+cat(pngName, 'sauvegardee\n')
 
 pngName <- 'probaSize.png'
 png(pngName)
