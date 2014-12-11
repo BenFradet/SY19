@@ -1,0 +1,694 @@
+% !TEX encoding = IsoLatin
+\documentclass{article}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{abstract}
+\usepackage{fancyhdr}
+\usepackage{float}
+
+\usepackage[colorlinks=true,linkcolor=red,urlcolor=blue,filecolor=green]{hyperref}
+
+\usepackage{dtklogos}
+\usepackage{pbox}
+\usepackage{caption}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{mathrsfs}
+
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\fancyhead[C]{TP 3: Reseaux de neurones}
+\fancyfoot[RO, LE]{\thepage}
+
+\newcommand{\bfx}{\mathbf(x)}
+\newcommand{\transp}{^{\mathrm{t}}}
+
+%-------------------------------------------------------------------------------
+
+\title{Compte-rendu Réseaux de neurones: Optimisation de l'architecture}
+
+\author{Benjamin Fradet, Wenting Gu}
+\date{\today}
+
+%-------------------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+%-------------------------------------------------------------------------------
+
+\begin{abstract}
+    Ces trois dernières séances de travaux pratiques ont porté sur l'étude des
+    réseaux de neurones pour la classification et en particulier leur
+    architecture.
+\end{abstract}
+
+%-------------------------------------------------------------------------------
+
+\begin{multicols}{2}
+
+\section{Introduction}\label{sec:intro}
+
+Dans un premier temps, nous étudierons théoriquement un réseau de neurones déjà
+établi, et nous essaierons d'en déduire les régions de décision associées. Nous
+verrons que malgré son architecture quelque peu atypique, il peut répondre au
+problème XOR.
+
+Ensuite, nous étudierons les différents paramètres de la fonction \texttt{nnet}
+sur des données générées et notamment le nombre de neurones dans la couche
+cachée \texttt{size} ainsi que le paramètre de régularisation \texttt{decay}
+afin d'obtenir le meilleur modèle possible. Enfin, nous construirons un réseau
+de neurones afin de prédire le sexe ainsi que l'espèce d'un crabe à partir des
+variables RW et FL contenues dans le jeu de données \emph{crabs}.
+
+%-------------------------------------------------------------------------------
+
+\section{Exercice 1}\label{sec:ex1}
+
+L’objectif de cet exercice est de montrer que le réseau de neurones considéré
+répond au problème XOR. Rappelons que notre architecture du réseau contient deux
+entrées $(x_1,x_2)$, un neurone dans la couche cachée et un neurone de sortie.
+
+En discriminationen en c classes, on a le nombre de neurones de sortie qui est
+égal au nombre de classes. Pour $c = 2$ classes comme notre cas particulier, on
+peut se limiter à un seul neurone de sortie.
+
+D'après l'énoncé, chaque neurone du réseau est supposé être un neurone de
+McCulloch-Pitts. Donc la fonction d’activation est la suivante :
+
+$$\varphi(u)=
+\begin{cases}
+    1& u \geqslant 0\\
+    0& \text{sinon}
+\end{cases}$$
+
+On obtient $s_1$ la valeur de sortie du neurone caché et $d$ celle du neurone de
+sortie:
+
+$$\begin{cases}
+    s_1 = \varphi(u_1)\ avec&u_1=x_1v_1 + x_2v_2 + v_0 \\
+    d = \varphi(u_2)\ avec&u_2=x_1w_1 + x_2w_2 + s_1w_3 + w_0
+\end{cases}$$
+
+En utilisant les valeurs des pois donnée dans l'énoncé, on a $s_1$:
+
+$$u_1 = x_1 + x_2 -1.5  => 
+s_1 = 
+\begin{cases}
+    1& si \ x_1+x_2-1.5 \geqslant 0\\
+    0& \text{sinon}
+\end{cases}$$
+
+En fonction des valeurs de $s_1$, on a deux cas possibles pour calculer $d$.
+
+Si $s_1$ = 0:
+$$d = x_1 + x_2 -0.5  => 
+s_2 = 
+\begin{cases}
+    1& si \ {x_1+x_2-0.5} \geqslant 0\\
+    0& \text{sinon}
+\end{cases}$$
+
+Si $s_1$ = 1:
+$$d = x_1 + x_2 -2.5  => 
+s_2 = 
+\begin{cases}
+    1& si\ x_1+x_2-2.5 \geqslant 0\\
+    0& \text{sinon}
+\end{cases}$$
+
+On utilise le tableau ci-dessous pour représenter le résultat:
+
+\begin{center}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+         $x_{1}$ & $x_{2}$ & $u_1$ & $s_{1}$ & $u_{2}$ & d\\
+        \hline
+        0 & 0 & -1.5 & 0 & -0.5 & 0\\
+        \hline
+        0 & 1 & -0.5 & 0 & 0.5 & 1 \\
+        \hline
+        1 & 0 & -0.5 & 0 & 0.5 & 1 \\
+        \hline
+        1 & 1 & 0.5 & 1 & -0.5 & 0 \\
+        \hline
+    \end{tabular}\\
+\end{center}
+
+En vérifiant la valeur de sortie $d$ en fonction des deux entrées
+$(x_1,x_2)$, on a constaté que ce réseau répond bien au problème XOR.
+On peut établir trois équations comme frontières de décision:
+$$
+\begin{cases}
+    u_1 = x_1+x_2-1.5\\
+    u_2 = x_1+x_2-2.5& pour \ s_1=0\\
+    u_2 = x_1+x_2-2.5& pour\ s_1=1
+\end{cases}$$
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{exo1.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:ex1}Régions de décision}
+    \end{center}
+\end{figure}
+
+Le figure montre 4 régions possibles séparées par ces trois droites.
+
+\section{Exercice 2}\label{sec:ex2}
+
+\subsection{Question 1}\label{subsec:ex21}
+
+\subsubsection{Lois utilisées pour générer l'ensemble d'apprentissage}\label{subsubsec:ex211}
+
+Les lois utilisées pour générer l'ensemble d'apprentissage sont des lois
+normales multidimensionnelles ayant comme paramètres:
+
+\begin{equation}
+    \mathcal{N}_1\Bigg(\begin{pmatrix*}[r]
+        4 \\
+        6
+    \end{pmatrix*}, \begin{pmatrix*}[r]
+        1 & 0 \\
+        0 & 2
+    \end{pmatrix*}\Bigg)
+\end{equation}
+
+\begin{equation}
+    \mathcal{N}_1\Bigg(\begin{pmatrix*}[r]
+        6 \\
+        1
+    \end{pmatrix*}, \begin{pmatrix*}[r]
+        2 & 0 \\
+        0 & 1
+    \end{pmatrix*}\Bigg)
+\end{equation}
+
+\begin{equation}
+    \mathcal{N}_1\Bigg(\begin{pmatrix*}[r]
+        -4 \\
+        -4
+    \end{pmatrix*}, \begin{pmatrix*}[r]
+        1.5 & 0 \\
+        0 & 2
+    \end{pmatrix*}\Bigg)
+\end{equation}
+
+\begin{equation}
+    \mathcal{N}_1\Bigg(\begin{pmatrix*}[r]
+        0 \\
+        0
+    \end{pmatrix*}, \begin{pmatrix*}[r]
+        1 & 0 \\
+        0 & 1
+    \end{pmatrix*}\Bigg)
+\end{equation}
+
+\subsubsection{Règle de Bayes}\label{subsubsec:ex212}
+
+Si on suppose la distribution de $x$ dans la classe $k$ de la manière suivante:
+
+\begin{equation}
+    \begin{split}
+        f_k(x) = & \frac{1}{(2 \pi)^{p / 2}(|\Sigma_k|)^{1/2}} \, \times \\
+                 & exp(-\frac{1}{2} (x - \mu_k)^{T} \Sigma^{-1}_k (x - \mu_k))
+    \end{split}
+\end{equation}
+
+La règle de Bayes s'écrit alors:
+
+\begin{equation}
+    \begin{split}
+        \delta(x) &= a_{k^*} \\
+        \text{avec } k^* &= \operatorname*{arg\, max}_k \mathbb{P}(\omega_k | x) \\
+                         &= \operatorname*{arg\, max}_k \pi_k f_k(x) \\
+                         &= \operatorname*{arg\, max}_k g_k(x) \\
+        \text{avec } g_k(x) &= ln(f_k(x)) + ln(\pi_k) \\
+                            &= -\frac{1}{2} (x - \mu_k)^T \Sigma{-1}{k} (x - \mu_k) -\\
+                            & \frac{1}{2} ln(|\Sigma_k|) + ln(\pi_k) - \frac{p}{2} ln(2 \pi)
+    \end{split}
+\end{equation}
+
+On obtient les frontières de décision lorsque $g_k(x) = g_l(x)$ étant données
+deux classes $k \text{ et } l \text{, avec } k \neq l$.
+
+\subsubsection{Développement de la règle de Bayes}\label{subsubsec:ex213}
+
+La densité de la loi normale bidimensionnelle de paramètres:
+
+\begin{equation}
+    \mu = \begin{pmatrix*}[r]
+        \mu_1 \\
+        \mu_2
+    \end{pmatrix*},
+    \Sigma = \begin{pmatrix*}[r]
+        a & 0 \\
+        0 & b
+    \end{pmatrix*}
+\end{equation}
+
+est donnée par:
+
+\begin{equation}
+    \begin{split}
+        f(x) &= \frac{1}{2 \pi \sqrt{|\Sigma|}} \, exp(\frac{-1}{2}(x - \mu)^{T} \Sigma^{-1} (x - \mu)) \\
+        &= \frac{1}{2 \pi \sqrt{ab}} \, exp(\frac{-1}{2} \begin{pmatrix*}[r]
+            x_1 - \mu_1 \\
+            x_2 - \mu_2
+        \end{pmatrix*}^{T} \begin{pmatrix*}[r]
+            \frac{1}{a} & 0 \\
+            0 & \frac{1}{b}
+        \end{pmatrix*} \\
+        & \begin{pmatrix*}[r]
+            x_1 - \mu_1 \\
+            x_2 - \mu_2
+          \end{pmatrix*} \\
+        & \text{on suppose } |\Sigma| = ab \neq 0 \text{ et } ab > 0 \\
+        &= \frac{1}{2 \pi \sqrt{ab}} \, exp(\frac{-1}{2} \begin{pmatrix*}[r]
+            x_1 - \mu_1 \\
+            x_2 - \mu_2
+        \end{pmatrix*}^{T} \begin{pmatrix*}[r]
+            \frac{x_1 - \mu_1}{a} \\
+            \frac{x_2 - \mu_2}{b}
+        \end{pmatrix*}) \\
+        &= \frac{1}{2 \pi \sqrt{ab}} \, exp(\frac{-1}{2} (\frac{{x_1 - \mu_1}^{2}}{a} + \frac{{x_2 - \mu_2}^{2}}{b})) \\
+        &= \frac{1}{\sqrt{2 \pi a}} \, exp(\frac{-1}{2 a} (x_1 - \mu_1)^{2}) \; \times \\
+        &  \frac{1}{\sqrt{2 \pi b}} \, exp(\frac{-1}{2 b} (x_2 - \mu_2)^{2})
+    \end{split}
+\end{equation}
+
+On voit donc que l'on obtient le produit des densités de deux lois normales
+monodimensionnelles.
+
+On obtient les différentes frontières de décision suivantes:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{bayes.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:bayes}Frontières de décision issues de la règle de Bayes}
+    \end{center}
+\end{figure}
+
+\subsection{Question 2}\label{subsec:ex22}
+
+\subsubsection{Frontières de décision obtenues par un réseau de neurones}\label{subsubsec:ex221}
+
+Pour $decay = 0$ et $size = 5$, c'est-à-dire un réseau de neurones avec 5
+neurones dans la couche cachée et un paramètre de régularisation nul, notre
+modèle aura donc tendance à trop se conformer à l'ensemble d'apprentissage et à
+mal généraliser à de nouvelles données.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{nnet5HiddenNeurones.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:nnet5}Frontières de décision obtenues pour \texttt{size} $= 5$ et \texttt{decay} $= 0$}
+    \end{center}
+\end{figure}
+
+\subsubsection{Visualisation des poids}\label{subsubsec:ex222}
+
+On peut visualiser les poids à l'aide d'un histogramme:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{histWeights2.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:weights}Histogramme des poids du réseau de neurones pour \texttt{size} $= 5$ et \texttt{decay} $= 0$}
+    \end{center}
+\end{figure}
+
+On voit que les poids semblent être répartis normalement autour de 0 avec
+quelques valeurs aberrantes. Ceci est normal car les poids sont initalisés avec
+des valeurs suivant une loi normale $\mathcal{N}(0, 1)$. On peut supposer que
+les valeurs aberrantes peuvent signaler le fait que notre modèle colle trop à
+l'ensemble d'apprentissage et généralisera mal à de nouveaux individus.
+
+\subsubsection{Générations de plusieurs modèles}\label{subsubsec:ex223}
+
+Etant donné que l'initialisation des poids est aléatoire, les poids diffèrent.
+Cependant, les réseaux de neurones utilisant un algorithme de rétropropagation
+pour minmiser l'erreur reposant sur l'algorithme de descente de gradient qui
+converge vers un minimum global, les frontières de décision de toutes les
+itérations convergent vers des frontières identiques.
+
+\subsection{Question 3}\label{subsec:ex23}
+
+\subsubsection{Nombre de poids en fonction de l'argument \texttt{size}}\label{subsubsec:ex231}
+
+Empiriquement, on trouve:
+
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:weightsAndSize}Nombres de poids à estimer en fonction de l'argument \texttt{size}}
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \# poids & \texttt{size} & \# \vtop{\hbox{\strut neurones}\hbox{\strut en entrée}} & \# \vtop{\hbox{\strut neurones}\hbox{\strut en sortie}} \\
+            \hline
+            1 & 11 & 2 & 4 \\
+            2 & 18 & 2 & 4 \\
+            3 & 25 & 2 & 4 \\
+            4 & 32 & 2 & 4 \\
+            5 & 39 & 2 & 4 \\
+            6 & 46 & 2 & 4 \\
+            7 & 53 & 2 & 4 \\
+            8 & 60 & 2 & 4 \\
+            9 & 67 & 2 & 4 \\
+            10 & 74 & 2 & 4 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+Il vient que $\text{\# poids} = (\texttt{size} + 1) \times \text{\# neurones en sortie} + \texttt{size} \times (\text{\# neurones en entrée} + 1)$.
+
+\subsubsection{Variation de \texttt{size}}\label{subsubsec:ex232}
+
+On choisit d'afficher les frontières de décision pour
+$\texttt{size} \in \{ 2, 4, 6, 8 \}$:
+
+\begin{itemize} 
+    \item pour $\texttt{size} = 2$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet2HiddenNeurones.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:nnet2}Frontières de décision obtenues pour \texttt{size} $= 2$ et \texttt{decay} $= 0$}
+            \end{center}
+        \end{figure}
+    \item pour $\texttt{size} = 4$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet4HiddenNeurones.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:nnet4}Frontières de décision obtenues pour \texttt{size} $= 4$ et \texttt{decay} $= 0$}
+            \end{center}
+        \end{figure}
+    \item pour $\texttt{size} = 6$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet6HiddenNeurones.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:nnet6}Frontières de décision obtenues pour \texttt{size} $= 6$ et \texttt{decay} $= 0$}
+            \end{center}
+        \end{figure}
+    \item pour $\texttt{size} = 8$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet8HiddenNeurones.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:nnet8}Frontières de décision obtenues pour \texttt{size} $= 8$ et \texttt{decay} $= 0$}
+            \end{center}
+        \end{figure}
+\end{itemize}
+
+Si on trace la probabilité d'erreur en fonction de \texttt{size}, on obtient:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{probaSize.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:probaSize}Probabilité d'erreur en fonction de \texttt{size}}
+    \end{center}
+\end{figure}
+
+On voit que les frontières de décision deviennent de plus en plus complexes
+au fur et à mesure que \texttt{size} augmente. En effet, plus \texttt{size} est
+grand plus la probabilité d'erreur se rapproche de 0 et plus notre modèle aura
+un biais important vis-à-vis de l'ensemble d'apprentissage et généralisera mal à
+de nouveaux exemples. En effet, notre modèle produira des frontières de décision
+très complexes afin de classer sans aucune erreur les observations présentes
+dans l'ensemble d'apprentissage.
+
+On se rend donc compte que mesurer l'erreur sur l'ensemble avec lequel on a
+construit le modèle n'est pas un indicateur fiable de la qualité du modèle.
+Pour obtenir un modèle optimal, il est donc nécessaire d'introduire une autre
+mesure de l'erreur afin de choisir un nombre de neurones dans la couche cachée
+optimal. Pour cela, on introduira un ensemble de test sur lequel on mesurera
+l'erreur par la méthode de validation croisee ~\ref{subsec:ex25}.
+
+On pourrait même envisager de choisir \texttt{size} grâce à la méthode du coude
+sur la figure précédente.
+
+\subsubsection{Probabilité d'erreur sur un nouveau jeu de données}\label{subsubsec:ex233}
+
+Si on construit de nouveaux modèles à partir de nouvelles données pour des
+valeurs de \texttt{size} allant de 1 a 10, on retrouve des valeurs de
+probabilités d'erreur semblables à celles trouvées dans ~\ref{subsubsec:ex232}:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{probaSize2.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:probaSize2}Probabilité d'erreur en fonction de \texttt{size}}
+    \end{center}
+\end{figure}
+
+\subsection{Question 4}\label{subsec:ex24}
+
+\subsubsection{Variation de \texttt{decay}}\label{subsubsec:ex241}
+
+On choisit d'afficher les frontières obtenues à partir des réseaux de neurones
+lorsque $\texttt{decay} \in \{ 0.01, 0.1, 10, 100 \}$:
+
+\begin{itemize}
+    \item pour $\texttt{decay} = 0.01$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet10Decay.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:0.01Decay}Frontières de décision obtenues pour \texttt{size} $= 5$ et \texttt{decay} $= 0.01$}
+            \end{center}
+        \end{figure}
+        On voit que pour une valeur de \texttt{decay} faible (ici 0.01), les
+        frontières sont sensiblement égales à celles observées lorsque
+        \texttt{decay} valait 0 ~\ref{fig:nnet5}, la penalité infligée aux
+        poids forts est trop faible pour être remarquable: les frontières sont
+        uniquement quelque peu lissées.
+    \item pour $\texttt{decay = 0.1}$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet100Decay.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:0.1Decay}Frontières de décision obtenues pour \texttt{size} $= 5$ et \texttt{decay} $= 0.1$}
+            \end{center}
+        \end{figure}
+        On commence à voir que les frontières de décision sont relâchées par
+        rapport aux exemples présents dans l'ensemble d'apprentissage.
+    \item pour $\texttt{decay = 10}$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet10000Decay.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:10Decay}Frontières de décision obtenues pour \texttt{size} $= 5$ et \texttt{decay} $= 10$}
+            \end{center}
+        \end{figure}
+        On voit que nos frontières sont maintenant trop relâchées par rapport
+        à notre ensemble d'apprentissage, on en déduit donc que la valeur
+        optimale de \texttt{decay} se situe entre 0.1 et 10.
+    \item pour $\texttt{decay = 100}$:
+        \begin{figure}[H]
+            \begin{center}
+                \includegraphics[width=0.5\textwidth]{nnet100000Decay.png}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{fig:100Decay}Frontières de décision obtenues pour \texttt{size} $= 5$ et \texttt{decay} $= 100$}
+            \end{center}
+        \end{figure}
+        Ici, notre réseau de neurones se reduit à une simple regression
+        lineaire, comme lorsque $\texttt{size} = 1$.
+\end{itemize}
+
+On voit donc que le paramètre \texttt{decay} joue un rôle quant a la qualité du
+modèle, une trop faible valeur aura tendance à faire en sorte que le
+modèle décrive du bruit (comme on peut le voir sur ~\ref{fig:0.01Decay} les
+lignes étant ondulées) et colle trop à l'ensemble d'apprentissage, on parle
+alors d'overfitting. A l'inverse une valeur trop élevée, aura tendance à trop
+simplifier le modèle.
+
+\subsubsection{Evolution des poids en fonction de \texttt{decay}}\label{subsubsec:ex242}
+
+Si on affiche une boîte à moustache des valeurs des poids pour chaque valeur
+de \texttt{decay}, on obtient:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{boxplotsWeights.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:boxplots}Diagrammes en boîte des poids selon le paramètre \texttt{decay}}
+    \end{center}
+\end{figure}
+
+On voit que plus \texttt{decay} augmente, plus l'étendue des valeurs est
+réduite, ceci est normal car \texttt{decay} est un paramètre de regularisation
+visant à pénaliser les poids élevés en valeur absolue.
+
+Cela se traduit par une fonction modelisée plus simple et donc des frontières
+de décision plus simples, on peut le voir car, par exemple, on a des frontières
+d'équation très complexes pour $\texttt{decay} = 0$ ~\ref{fig:nnet5} et une
+simple ligne droite pour $\texttt{decay} = 100$ ~\ref{fig:100Decay}.
+
+\subsection{Question 5}\label{subsec:ex25}
+
+\subsubsection{Probabilité d'erreur pour la prédiction du sexe}\label{subsubsec:ex251}
+
+Avant l'apprentissage de notre modèle, on mélange nos exemples car ils sont
+triés selon l'espèce et le sexe. Ceci afin d'éviter d'introduire un biais lors
+de l'apprentissage. En effet, si on prend les 150 premiers exemples comme
+ensemble d'apprentissage, notre modèle sera biaisé envers le sexe mâle et
+l'espece bleue en ayant rencontré plus lors de l'apprentissage. De plus, il aura
+de mauvaises performances sur l'ensemble de test qui sera constitué
+majoritairement de crabes femelles et de race orange auxquelles il n'aura pas
+été confronté.
+
+On utilise la méthode de validation croisée qui consiste à decouper notre
+ensemble de départ en $k$ sous-ensembles de même taille et de construire $k$
+couples d'ensembles d'apprentissage et test, et ensuite construire notre modèle
+à partir de chaque ensemble d'apprentissage et de le tester sur chaque ensemble
+de test associé. Enfin, on mesure l'erreur totale comme suit:
+
+\begin{equation}
+    e_{totale} = \frac{1}{n} \sum_{i = 1}^{k} n_k * e_k
+\end{equation}
+où: $n$ est le nombre d'observations total \newline
+$n_k$ est le nombre d'observations dans le sous-ensemble de test $k$ \newline
+$e_k$ est l'erreur associée au sous-ensemble de test $k$
+
+Si on emploie cette méthode pour tester notre réseau de neurones, on obtient
+une probabilité d'erreur de 0.1, par rapport à la LDA avec laquelle on obtient
+0.125, ce qui représente un gain d'environ 22\%.
+
+\subsubsection{Frontières de décision}\label{subsubsec:ex252}
+
+Si on colore les femelles en rouge et les mâles en bleu, on obtient les
+frontières de décision suivantes pour un réseau de neurones avec 6 neurones dans
+la couche cachée et \texttt{decay} valant 0.001:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{nnetCrabsSex.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:nnetSex}Frontières de décision obtenues par un réseau de neurones pour prédire le sexe}
+    \end{center}
+\end{figure}
+
+De la même manière, pour LDA:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ldaCrabsSex.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:ldaSex}Frontières de décision obtenues par LDA pour prédire le sexe}
+    \end{center}
+\end{figure}
+
+Etant donne que LDA tente de trouver une combinaison linéaire des variables RW
+et FL, la frontière de décision qui en résulte est, elle aussi, linéaire. En
+revanche, les frontières de décision obtenues par le réseau de neurones sont
+plus complexes et donc on obtient de meilleurs résultats. On aurait pu retrouver
+un modèle semblable à la LDA avec un réseau de neurones en n'utilisant qu'un
+neurone pour la couche cachée ou en affectant à \texttt{decay} une valeur
+élevée.
+
+\subsection{Question 6}\label{subsec:ex26}
+
+\subsubsection{Probabilité d'erreur pour la prédiction de l'espèce}\label{subsubsec:ex261}
+
+Là aussi, on mélange les observations pour avoir un nombre proportionnel de
+crabes bleus et oranges dans l'ensemble d'apprentissage et l'ensemble de test.
+On obtient une probabilité d'erreur en utilisant un réseau de neurones avec
+$\texttt{size} = 6$ et $\texttt{decay} = 0.001$ et la méthode de validation
+croisée de 0.26 ce qui represente un gain d'environ 22\% par rapport à la LDA
+avec laquelle on trouve une probabilité d'erreur valant 0.325.
+
+\subsubsection{Frontières de décision}\label{subsubsec:ex262}
+
+Si on représente les crabes appartenant à l'espece orange par des cercles rouges
+et les crabes d'espèce bleue par des cercles bleus, on obtient les frontières
+suivantes lorsqu'on construit un modèle suivant un réseau de neurones ayant
+6 neurones dans la couche cachée et un paramètre \texttt{decay} valant 0.001:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{nnetCrabsSpecies.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:nnetSpecies}Frontières de décision obtenues par un réseau de neurones pour prédire l'espèce}
+    \end{center}
+\end{figure}
+
+En ce qui concerne la LDA, on a:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{ldaCrabsSpecies.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:ldaSpecies}Frontières de décision obtenues par LDA pour prédire l'espèce}
+    \end{center}
+\end{figure}
+
+On voit que les observations ne sont pas linéairement séparables selon l'espèce
+c'est pourquoi la LDA obtient des résultats si mauvais, on s'en rend d'autant
+plus compte en traçant la frontière de décision. De même, le réseau de neurones
+n'a pas des performances extraordinaires, on aurait sûrement pu trouver une
+meilleure combinaison de variables explicatives de l'espèce du crabe.
+
+%-------------------------------------------------------------------------------
+
+\section{Conclusion}\label{sec:conclu}
+
+En conclusion, ce TP nous aura servi d'introduction aux réseaux de neurones et
+en particulier leur architecture. Dans une première partie nous avons pu
+comprendre l'effet des paramètres \texttt{size} et \texttt{decay}. Il aurait été
+d'ailleurs intéressant de chercher les paramètres optimaux dans le cas de la
+classification des crabes selon leur sexe et espèce.
+
+On a eu aussi l'occasion de mettre en pratique la méthode de validation croisée
+afin de mesurer la qualité de notre modèle. On aurait pu aussi mettre en place
+d'autre méthodes d'estimation du risque comme la méthode du bootstrap ou la
+méthode de resubstitution.
+
+On a également pu se rendre compte que les réseaux de neurones sont très sujets
+à l'overfitting et qu'il est très important de régulariser celui-ci afin
+d'éviter que notre modèle ne se conforme trop aux exemples contenus dans
+l'ensemble d'apprentissage. Aussi, pour obtenir des résultats optimaux, il est
+nécessaire de normaliser les données d'entrée. En effet, si les variables
+d'entrée ne sont pas sur la même échelle, certaines auront une influence plus
+forte sur le modèle que d'autres.
+
+%-------------------------------------------------------------------------------
+
+\end{multicols}
+\end{document}
