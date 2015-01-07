@@ -69,7 +69,7 @@ gammas <- -4:5
 probas <- c()
 notNullCoefs <- c()
 for (g in gammas) {
-    model <- svm(databcTrain, classesbcTrain, kernel = 'radial', cost = 1000,
+    model <- svm(databcTrain, classesbcTrain, kernel = 'radial', cost = 10^5,
                 gamma = 10^g)
     pred <- predict(model, databcTest)
     probas[g + 5] <- length(which(pred != classesbcTest)) / nTest
@@ -104,6 +104,7 @@ tuneGaussian <- tune(svm, train.x = databcTrain, train.y = classesbcTrain,
                      cost = 1, kernel = 'radial')
 model <- svm(databcTrain, classesbcTrain, kernel = 'radial', cost = 1,
              gamma = tuneGaussian$best.parameter$gamma)
+cat('best gamma: ', tuneGaussian$best.parameter$gamma, '\n')
 pred <- predict(model, databcTest)
 CrossTable(x = classesbcTest, y = pred,
            prop.chisq = F, dnn = c('actual', 'predicted'))
@@ -117,6 +118,9 @@ model <- svm(databcTrain, classesbcTrain, kernel = 'polynomial', cost = 1,
              gamma = tunePoly$best.parameter$gamma,
              degree = tunePoly$best.parameter$degree,
              coef0 = tunePoly$best.parameter$coef0)
+cat('best gamma: ', tunePoly$best.parameter$gamma, '\n')
+cat('best degree: ', tunePoly$best.parameter$degree, '\n')
+cat('best coef0: ', tunePoly$best.parameter$coef0, '\n')
 pred <- predict(model, databcTest)
 CrossTable(x = classesbcTest, y = pred,
            prop.chisq = F, dnn = c('actual', 'predicted'))
