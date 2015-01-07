@@ -1,11 +1,15 @@
 library(e1071)
 
+# matrice des exemples
 x <- c(1, 2, 6, 4, 5)
+# matrice des classes associees a ces exemples
 y <- factor(c(1, 1, 1, -1, -1))
 df <- data.frame(x = x, class = y)
+# creation du modele grace a la fonction svm
 model <- svm(class ~ x, data = df, scale = F, cost = 100,
              kernel = 'polynomial', gamma = 1, coef0 = 1, degree = 2)
 
+# affichage des resultats
 cat('support vectors: ', model$SV, '\n')
 cat('alpha(i) * y(i): ', model$coefs, '\n')
 cat('w: ', t(model$coefs) %*% as.matrix(df[model$index, 1]), '\n')
