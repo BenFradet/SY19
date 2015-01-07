@@ -1,0 +1,855 @@
+% !TEX encoding = IsoLatin
+\documentclass{article}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{abstract}
+\usepackage{fancyhdr}
+\usepackage{float}
+
+\usepackage[colorlinks=true,linkcolor=red,urlcolor=blue,filecolor=green]{hyperref}
+
+\usepackage{dtklogos}
+\usepackage{pbox}
+\usepackage{caption}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{mathrsfs}
+\usepackage{color}
+
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{green}{rgb}{0,0.6,0}
+
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\fancyhead[C]{TP 4: Séparateurs à vastes marges}
+\fancyfoot[RO, LE]{\thepage}
+
+\newcommand{\bfx}{\mathbf(x)}
+\newcommand{\transp}{^{\mathrm{t}}}
+
+%-------------------------------------------------------------------------------
+
+\title{Compte-rendu Séparateurs à vastes marges}
+
+\author{Benjamin Fradet, Wenting Gu}
+\date{\today}
+
+%-------------------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+%-------------------------------------------------------------------------------
+
+\begin{abstract}
+    Ces séances de travaux pratiques ont porté sur l'étude des séparateurs à
+    vaste marge (ou machines à vecteurs de support) et plus particulièrement la
+    classification et non la régression sur des données à deux classes
+    linéairement et non linéairement séparables.
+\end{abstract}
+
+%-------------------------------------------------------------------------------
+
+\begin{multicols}{2}
+
+\section{Introduction}\label{sec:intro}
+
+Dans un premier temps, nous effectuerons un exercice analytique qui nous servira
+d'introduction aux machines à vecteurs de support portant sur des
+données linéairement séparables afin de mieux comprendre le fonctionnement des
+séparateurs à vaste marge dans le cas le plus simple (classification en deux
+classes avec des données linéairement séparables).
+Ensuite, nous nous pencherons sur le cas de données non linéairement séparables
+en introduisant des "slack variables" qui permettent d'avoir une marge souple
+c'est-à-dire que le modèle autorise des exemples mal classifiés lors de
+l'apprentissage du modèle. Ces variables seront toutefois tempérées par une
+variable de pénalisation.
+Par la suite, nous continuerons d'étudier des données non linéairement
+séparables mais cette fois nous introduirons une fonction noyau qui nous
+permettra d'obtenir des fonctions discriminantes non linéaires.
+Finalement, nous travaillerons sur des données réelles portant sur la
+classification de tumeurs (bénignes ou malines) et nous essaierons de trouver
+le meilleur modèle possible.
+
+%-------------------------------------------------------------------------------
+
+\section{Exercice 1}\label{sec:ex1}
+
+Dans cet exercice, nous allons nous familiariser avec les séparateurs à vaste
+marge ainsi que la librairie \texttt{e1071} en étudiant des données
+linéairement séparables.
+
+\subsection{Equation de l'hyperplan}\label{subsec:ex11}
+
+D'après l'énoncé, 4 observations sont représentées dans la figure, on propose
+intuitivement l’équation $y = x$ (soit $x - y = 0$) comme frontière de décision
+qui sépare la classe $C_1$ de la classe $C_2$. Ainsi, l’équation de l’hyperplan
+à vaste marge $\mathcal{H}$ est : $h(x) = 0 = w'x + w_0$ avec $w = (1,-1)$ et
+$w_0 = 0$.
+
+Les vecteurs de support sont les vecteurs qui se trouvent le plus proches de
+l'hyperplan $\mathcal{H}$ et se situent à la marge. Dans notre cas, les points
+$x_1$ et $x_2$ sont des vecteurs de support.
+
+\subsection{Calcul de la marge optimale}\label{subsec:ex12}
+
+La marge est la plus petite distance d'un ensemble d'apprentissage $x_i$ à
+l'hyperplan $\mathcal{H}$:
+
+\begin{equation}
+    \rho = min \, d(x_i, \mathcal{H}) \text{ pour }i = \{1,...n\}
+\end{equation}
+
+La marge optimale correspond à la distance entre les vecteurs de support et
+l'hyperplan optimal.
+
+D'après la figure, on trouve la marge optimale étant égale à la moitié de la
+distance entre $x_1$ et $x_2$, soit la distance des vecteurs de support à
+$\mathcal{H}$.
+
+Si on prend la distance entre $x_1$ et $\mathcal{H}$, on a donc:
+
+\begin{equation}
+    \begin{split}
+        \rho &= \frac{|1 \times x_{x_1} + (-1) \times y_{x_1}|}
+        {\sqrt{1^2 + (-1)^2}} \\
+             &= \frac{|2 - 0|}{\sqrt{2}} \\
+             &= \frac{2}{\sqrt{2}} \\
+             &= \sqrt{2}
+    \end{split}
+\end{equation}
+
+La marge optimale est donc égale à $\sqrt{2}$.
+
+\subsection{Détermination des régions de décision}\label{subsec:ex13}
+
+L'ajout d'une nouvelle observation venant de l'ensemble d'apprentissage
+n'influence pas la solution si elle ne fait pas changer la valeur de la marge
+optimale. En d'autres termes, il ne faut pas que la distance entre cette
+nouvelle observation et l'hyperplan $\mathcal{H}$ soit inférieure à la  marge
+optimale. Ainsi on peut définir les frontières $r_1$ et $r_2$ (respectivement
+pour $C_1$ et $C_2$) en passant par les vecteurs de support de chaque classe: 
+
+$$
+\begin{cases}
+    r_1 = x - y + 2 \\
+    r_2 = x - y - 2
+\end{cases}
+$$
+
+On trouve la région $R_1 : r_1 \leq 0$ pour les observations de la classe $C_1$
+et la région $R_2: r_2 \geq 0$ pour les observations de la classe $C_2$.
+
+Si on affiche nos résultats sur une figure:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{svmEx1.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:ex1}Régions de décision}
+    \end{center}
+\end{figure}
+
+\subsection{Code R}\label{subsec:ex14}
+
+Le code suivant permet d'aboutir à la solution:
+
+\lstset{
+    caption=Code permettant d'obtenir le modèle du séparateur à vaste marge,
+    breaklines=true,
+    basicstyle=\footnotesize,
+    tabsize=1,
+    breakatwhitespace=true,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green},
+    stringstyle=\color{mauve}
+}
+\lstinputlisting[language=Python, firstline=1, lastline=15]{ex1.R}
+
+\subsection{Confirmation des résultats à l'aide du modèle}\label{subsec:ex15}
+
+En exécutant le code R donné à la question précédente, on obtient un modèle.
+Plusieurs valeurs de retour sont accessibles depuis ce modèle:
+\begin{itemize}
+    \item \texttt{model\$SV} donne les vecteurs de support:
+        \begin{table}[H]
+            \begin{center}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{tab:svEx1}Vecteurs de support}
+                \begin{tabular}{|c|c|}
+                    \hline
+                    $x_1$ & $x_2$ \\
+                    \hline
+                    2 & 0 \\
+                    0 & 2 \\
+                    \hline
+                \end{tabular}
+            \end{center}
+        \end{table}
+    \item \texttt{model\$coefs} donne les multiplicateurs de Lagrange multipliés
+        par les libellés des classes (1 et -1 dans notre cas):
+        \begin{table}[H]
+            \begin{center}
+                \centering
+                \captionsetup{justification=centering}
+                \caption{\label{tab:svEx1}Multiplicateurs de Lagrange}
+                \begin{tabular}{|c|c|}
+                    \hline
+                    $\alpha_1 * y_1$ & $\alpha_2 * y_2$ \\
+                    \hline
+                    0.25 & -0.25 \\
+                    \hline
+                \end{tabular}
+            \end{center}
+        \end{table}
+    \item \texttt{model\$rho} donne la valeur $-w_0 = 0$
+    \item \texttt{model\$index} donne les indices des vecteurs de support dans
+        l'ensemble d'apprentissage
+    \item \texttt{t(model\$coefs) \%*\%} \\
+            \texttt{as.matrix(df[model\$index, c(1, 2)])} donne l'expression de
+            $w$:
+            \begin{equation}
+                w = \begin{pmatrix*}[r]
+                    0.5 \\
+                    -0.5
+                \end{pmatrix*}
+            \end{equation}
+\end{itemize}
+
+Le modèle donne les indices des vecteur de support 1 et 2, on a donc
+$\alpha_1 = \alpha_2 = 0.25$ et $\alpha_3 = \alpha_4 = 0$ car $x_3$ et $x_4$ ne
+sont pas des vecteurs de support.
+
+En utilisant l'équation:
+
+\begin{equation*}
+    w = \sum_{i\in D}\alpha y_i x_i \ avec \ D = {1,2} 
+\end{equation*}
+
+On obtient:
+
+$w = 0.25 * (2,0)' + (-0.25) * (0, 2)' = (0.5, -0.5)'$
+
+Ce résultat est à une constante multiplicative près de $w$ de la première
+question et $w_0 = 0$, ce qui confirme nos résultats intuitifs.
+
+On retrouve l'équation du plan avec:
+
+\begin{equation}
+    \begin{split}
+        h(x) &= w'x + w_0 \\
+             &= \begin{pmatrix*}[r]
+                    0.5 & -0.5 \\
+                \end{pmatrix*} \times
+                \begin{pmatrix*}[r]
+                    x_1 \\
+                    x_2
+                \end{pmatrix*} + 0
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+        &h(x) = 0 \\
+        &\iff 0.5 x_1 - 0.5 x_2 = 0 \\
+        &\iff x_1 = x_2
+    \end{split}
+\end{equation}
+
+On retrouve bien l'équation de l'hyperplan trouvée intuitivement: $y = x$.
+
+\section{Exercice 2}\label{sec:ex2}
+
+Dans cet exercice, nous allons travailler avec des données non linéairement
+séparables en introduisant des fonctions de coûts de mauvaise classification.
+Nous exprimerons le problème d'optimisation quadratique jusqu'à obtenir
+l'équation de l'hyperlan séparateur.
+
+\subsection{Justifier les contraintes $\xi_i \geqslant$ 0 inutiles}
+\label{subsec:ex21}
+
+Ici, dans l'énoncé du problème d'optimisation, on a une somme des carrés des
+coûts des erreurs qui est toujours positive. Donc la contrainte $\xi_i \geq 0$
+est inutile.
+
+\subsection{Construction du lagrangien}\label{subsec:ex22}
+
+D'après l'énoncé et la première question, le problème d'optimisation consiste à
+minimiser:
+
+\begin{equation*}
+    \frac{1}{2}\parallel w^2 \parallel + \frac{c}{2}\sum_{i=1}^n \xi_i^2
+\end{equation*}
+
+sous contraintes:
+
+\begin{equation*}
+    \begin{split}
+        &y_i(w x_i + w_0 ) \geq 1 - \xi_i \ pour \ i = 1...n \\
+        &\iff y_i(w x_i + w_0) + \xi_i - 1 \geq 0 \ pour \ i = 1...n
+    \end{split}
+\end{equation*}
+
+En sommant toutes les contraintes, on obtient l'expression du lagrangien
+suivante:
+
+\begin{equation*}
+    \begin{split}
+        \textit{L}(w,w_0,\alpha) = &\frac{1}{2}\parallel w^2\parallel +
+        \frac{c}{2}\sum_{i=1}^{n}\xi_i^2 \\
+                                   &- \sum_{i=1}^n \alpha_i[y_i(w' x_i + w_0) +
+        \xi_i - 1]
+    \end{split}
+\end{equation*}
+
+où $\alpha = (\alpha_1,...,\alpha_n)$ sont les multiplicateurs de Lagrange.
+
+\subsection{Calcul des dérivées}\label{subsec:ex23}
+
+En calculant les dérivées par rapport au différentes variables, on obtient:
+
+\begin{equation*}
+    \frac{\partial L}{\partial w} = w - \sum_{i=1}^{n}\alpha_i y_i x_i 
+\end{equation*}
+
+\begin{equation*}
+    \frac{\partial L}{\partial w_0} = - \sum_{i=1}^{n} \alpha_i y_i
+\end{equation*}
+
+\begin{equation*}
+    \frac{\partial L}{\partial \xi_i} = c \xi_i - \alpha_i
+\end{equation*}
+
+Pour calculer le point selle, qui est le point à l'optimalité, on regarde pour
+quelles valeurs les dérivées s'annulent.
+On a alors:
+
+\begin{equation}
+    \begin{split}
+        & \frac{\partial L}{\partial w} = 0 \\
+        & \iff w^* = \sum_{i = 1}^n \alpha_i y_i x_i
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+        & \frac{\partial L}{\partial w_0} = 0 \\
+        & \iff \sum_{i = 1}^n \alpha_i y_i = 0
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+        & \frac{\partial L}{\partial \xi_i} = 0 \\
+        & \iff \xi_i^* = \frac{\alpha_i}{c}
+    \end{split}
+\end{equation}
+
+\subsection{Expression du problème dual}\label{subsec:ex24}
+
+On a le problème dual suivant:
+
+\begin{equation*}
+    \begin{split}
+        \operatorname*{max}_{\alpha}
+        & \textit{L}(w, w_0, \xi, \alpha) = \\
+        & \frac{1}{2} \parallel w \parallel^2 + \frac{c}{2} \sum_{i = 1}^{n}
+        \xi_i^2 \\
+        & - \sum_{i = 1}^{n} \alpha_i [y_i (w x_i + w_0) + \xi_i - 1]
+    \end{split}
+\end{equation*}
+
+sous contraintes:
+
+\begin{equation}
+    \begin{split}
+        & \frac{\partial L}{\partial w} = 0 \\
+        & \frac{\partial L}{\partial w_0} = 0 \\
+        & \frac{\partial L}{\partial \xi_i} = 0 \\
+        & \alpha_i \geq 0, \, \forall i = 1..n
+    \end{split}
+\end{equation}
+
+Si on remplace $w$ par $w^*$ et $\xi_i$ par $\xi_i^*$:
+
+\begin{equation}
+    \begin{split}
+        \textit{W}(\alpha) = & \frac{1}{2} (\sum_{i = 1}^n \alpha_i y_i x_i')
+        (\sum_{j = 1}^n \alpha_j y_j x_j) \\
+                             & - \sum_{i = 1}^n \alpha_i y_i (\sum_{j = 1}^n
+        \alpha_j y_j x_j') x_i \\
+                             & - w_0 \sum_{i = 1}^n \alpha_i y_i - \frac{1}{c}
+        \sum_{i = 1}^n \alpha_i \alpha_i + \sum_{i = 1}^n \alpha_i
+    \end{split}
+\end{equation}
+
+Or, d'après ~\ref{subsec:ex23}, $\sum_{i = 1}^n \alpha_i y_i = 0$, donc:
+
+\begin{equation}
+    \begin{split}
+        \textit{W}(\alpha) = & \frac{1}{2} \sum_{i,j = 1}^{n} \alpha_i \alpha_j
+        y_i y_j x_i' x_j \\
+                             & - \sum_{i,j = 1}^{n} \alpha_i \alpha_j y_i y_j
+        x_i' x_j \\
+                             & - \frac{1}{c} \sum_{i = 1}^{n} \alpha_i^2 +
+        \sum_{i = 1}^n \alpha_i \\
+        = & \sum_{i = 1}^n \alpha_i - \frac{1}{2} \sum_{i,j = 1}^n \alpha_i
+        \alpha_j [y_i y_j x_i' x_j + \frac{\delta_{ij}}{c}]
+    \end{split}
+\end{equation}
+
+où $\delta_{ij}$ représente le symbole de Kronecker:
+
+$$\delta_{ij}=
+\begin{cases}
+    1 &  \ si \ i=j\\
+    0 & sinon
+\end{cases}$$\\
+
+On a donc le nouveau problème dual suivant:
+
+\begin{equation}
+    \operatorname*{max}_{\alpha} \, W(\alpha)
+\end{equation}
+
+sous contraintes:
+
+\begin{equation}
+    \begin{split}
+        & \sum_{i = 1}^n \alpha_i y_i = 0 \\
+        & \xi_i = \frac{\alpha_i}{c} \\
+        & \alpha_i \geq 0
+    \end{split}
+\end{equation}
+
+\subsection{Conditions de Kuhn-Tücker}\label{subsec:ex25}
+
+%Les conditions de Kuhn-Tücker nous permettent de dire qu'à l'optimalité, on a:
+%
+%\begin{equation}
+%    \alpha_i^* [y_i (w^*' x_i + w_0^*) - (1 - \xi_i)] = 0
+%\end{equation}
+%
+%Si $\alpha_i^* \neq 0$, $y_i (w^*' x_i + w_0^*) = 1 - \xi_i$, alors $x_i$ est
+%un vecteur de support.
+%
+%Or, $\alpha_i \geq 0$ d'après ~\ref{subsec:ex24}, donc
+%$\alpha_i > 0, \, \forall i = 1..n$.
+%D'où $\xi_i^* = \frac{\alpha_i^*}{c} > 0, \, \forall i = 1..n$ car
+%$\alpha_i^* \geq 0$ et $c > 0$.
+
+On suppose que $\alpha^*$ est la solution du problème dual. Les conditions de
+Kuhn-Tücker sont vérifiées pour $\alpha^*$:
+
+$$\begin{cases}
+    \frac{\partial L}{\partial w}(w^*, \alpha^*) = 0  \\
+    c_i (w *) = 0 \\
+    \alpha^* c_i (w *) = 0 \\
+    \alpha_i^* \geqslant 0
+\end{cases}$$
+\\
+
+Où $c_i(w^*)$ sont les contraintes du problème, dans notre cas
+$c_i(w^*) = y_i(w^* x_i + w_0^*)$. Donc pour la propriété
+$\alpha^* c_i(w^*) = 0$, nous devons vérifier
+$\alpha^* [y_i(w^* x_i + w_0^*) - (1 - \xi_i)] = 0$. Quand $\alpha^* > 0$,
+il faut $y_i(w^* x_i + w_0^*) - (1 - \xi_i) = 0$ avec $x_i$
+les vecteurs de support. On sait que $\alpha_i = \frac{\xi_i}{c} > 0$ et que
+$c > 0$, on a forcément des variables d'écart $\xi_i$ > 0 pour les vecteurs de
+support.
+
+\subsection{Généralisation à des frontières non linéaires}\label{subsec:ex26}
+
+On peut généraliser pour obtenir des frontières de décision non linéaires en
+reconsidérant le problème dans un espace de dimension supérieure où il existe
+des frontières de décision linéaire. Pour ce faire, on introduit une fonction
+noyau $\mathcal{K}$ qui facilitera les calculs et rendra transparente la
+transformation non linéaire $\phi$ qui permet de redéfinir le problème dans un
+espace de dimension supérieure.
+
+On obtient le problème dual suivant:
+
+\begin{equation}
+    W(\alpha) = \sum_{i = 1}^n \alpha_i - \frac{1}{2} \sum_{i,j = 1}^n
+    \alpha_i \alpha_j [y_i y_j \mathcal{K}(x_i, x_j) + \frac{\delta_{ij}}{c}
+\end{equation}
+
+sous contraintes:
+
+\begin{equation}
+    \begin{split}
+        & \sum_{i = 1}^n \alpha_i y_i = 0 \\
+        & \alpha_i \geq 0
+    \end{split}
+\end{equation}
+
+On obtient l'équation de l'hyperplan suivante si $\alpha^*$ est solution du
+problème dual précédent:
+
+\begin{equation}
+    h^*(x) = \sum_{i = 1}^n y_i \mathcal{K}(x, x_i) + w_0^*
+\end{equation}
+
+On a donc la fonction de décision suivante:
+
+\begin{equation}
+    g^*(x) = signe(h^*(x))
+\end{equation}
+
+\section{Exercice 3}\label{sec:ex3}
+
+Dans cet exercice, nous allons introduire des fonctions noyaux qui nous
+permettront d'obtenir des frontières de décision non linéaires qui permettent
+d'obtenir une classification correcte dans le cas de données non linéairement
+séparables.
+
+\subsection{Expression du lagrangien}\label{subsec:ex31}
+
+L'expression du lagrangien est de la forme:
+
+\begin{equation}
+    L = \sum_{i = 1}^n \alpha_i - \frac{1}{2} \sum_{i,j = 1}^n \alpha_i
+    \alpha_j y_i y_j \mathcal{K}(x_i, x_j)
+\end{equation}
+
+sous contraintes:
+
+\begin{equation}
+    \begin{split}
+        & \sum_{i = 1}^n \alpha_i y_i = 0 \\
+        & 0 \leq \alpha_i \leq c, \, \forall i = 1..n
+    \end{split}
+\end{equation}
+
+\subsection{Choix du $\alpha$}\label{subsec:ex32}
+
+\begin{itemize}
+    \item a) Les contraintes associées au lagrangien nous disent que les
+        $\alpha_i \geq 0, \, \forall i = 1..n$ donc $\alpha_2$ est incorrect.
+    \item d) De la même manière que pour a, les contraintes énoncent que:
+        $\alpha_i \leq c$, or $c = 100$ donc $\alpha_1$ est incorrect.
+    \item b) $\sum_{i = 1}^5 \alpha_i y_i = 0 \times 1 + 3 \times 1 + 1 \times
+        1 + 2 \times (-1) + 1 \times (-1) = 3 + 1 - 2 - 1 = 1 \neq 0$ donc une
+        des deux contraintes associées au lagrangien n'est pas respectée.
+    \item c) $\sum_{i = 1}^5 \alpha_i y_i = 0 \times 1 + 2.5 \times 1 +
+        4.833 \times 1 + 0 \times (-1) + 7.333 \times (-1) = 2.5 + 4.833 - 7.833
+        = 0$ donc toutes les contraintes sont respectées. $\alpha$ énoncé à la
+        proposition c est donc une solution possible au problème de
+        maximisation.
+\end{itemize}
+
+\subsection{Code R}\label{subsec:ex33}
+
+On peut retrouver la solution énoncée dans la proposition c à la question
+~\ref{subsec:ex32} avec le code suivant:
+
+\lstset{
+    caption=Code permettant d'obtenir le modèle du séparateur à vaste marge,
+    breaklines=true,
+    basicstyle=\footnotesize,
+    tabsize=1,
+    breakatwhitespace=true,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green},
+    stringstyle=\color{mauve}
+}
+\lstinputlisting[language=Python, firstline=1, lastline=16]{ex3.R}
+
+\subsection{Expression de la fonction discriminante}\label{subsec:ex34}
+
+On exprime la fonction discriminante de la manière suivante:
+
+\begin{equation}
+    \begin{split}
+        h(x) &= w^* \phi(x) + w_0^* \\
+             &= \sum_{i = 1}^5 \alpha_i y_i \mathcal{K}(x, x_i) + w_0^* \\
+             &= 2.5 \times 1 \times (2x + 1)^2 + 4.833 \times 1 \times
+                (6x + 1)^2 \\
+                & + 7.333 \times (-1) \times (5x + 1)^2 + 8.99 \\
+             &= 2.5 \times (4x^2 + 4x + 1) \\
+                & +4.833 \times (36x^2 + 12x + 1) \\
+                & -7.333 \times (25x^2 + 10x + 1) + 8.99 \\
+             &= 0.663x^2 - 5.334x + 8.99
+    \end{split}
+\end{equation}
+
+La règle de décision est immédiate:
+
+\begin{equation}
+    g(x) = signe(h(x))
+\end{equation}
+
+\subsection{Dessin de la fonction discriminante}\label{subsec:ex35}
+
+On choisit de représenter les exemples appartenant à la classe 1 à l'aide de
+croix et les exemples appartenant à la classe 2 par des signes plus. De plus,
+on représente les vecteurs de support en rouge. Enfin, on peut voir la fonction
+discriminante $h(x)$ en bleu.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{svmEx3.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:ex3}Régions de décision}
+    \end{center}
+\end{figure}
+
+On peut voir que $h(x)$ sépare correctement les exemples des différentes
+classes.
+
+\section{Exercice 4}\label{sec:ex4}
+
+Dans cet exercice pratique, nous allons travailler avec de vraies données et
+tenter d'obtenir le meilleur modèle possible en essayant de multiples
+combinaisons de paramètres différentes.
+
+\subsection{Différences des fonctions noyaux}\label{subsec:ex41}
+
+La fonction noyau polynomiale est définie par $(\gamma u' v + coef0)^{\alpha}$
+dans le package \texttt{e1071} tandis qu'elle a été définie de la manière
+suivante dans le cours: $(u' v + 1)^{\alpha}$. Cela revient à avoir $\gamma = 1$
+et $coef0 = 1)$.
+La librairie \texttt{e1071} définit la fonction noyau gaussienne telle que
+$exp(-\gamma \parallel u - v \parallel^2)$. En revanche, elle a été définie par
+$exp(-\frac{\parallel u - v \parallel^2}{2 \sigma^2})$ dans le cours, on a donc
+$\gamma = \frac{1}{2 \sigma^2}$.
+
+\subsection{Variation du paramètre de pénalisation $\gamma$ avec un noyau
+gaussien}\label{subsec:ex42}
+
+On choisit la largeur de bande par défaut
+$\frac{1}{2 \sigma^2} = \frac{1}{\text{\# de variables}} = \frac{1}{9}$, et on
+fait varier le paramètre de pénalisation $\gamma$ de 1 à 10, on construit un
+modèle de machine à vecteurs de support pour chaque valeur de coût $\gamma$ et
+on calcule l'erreur moyenne entre les classes prédites par notre modèle pour les
+exemples contenus dans l'ensemble de test par les classes réelles de ces mêmes
+exemples.
+On obtient les erreurs suivantes:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{probaErrorEx4.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:errorEx4}Erreur moyenne de classification sur
+        l'ensemble de test en fonction du paramètre de pénalisation}
+    \end{center}
+\end{figure}
+
+On voit que si on impose un coût de mauvaise classification faible, c'est-à-dire
+que notre modèle cherche moins à classifier correctement tous les exemples
+contenus dans l'ensemble d'apprentissage, au profit de la simplicité du modèle,
+il tend à mieux se généraliser pour des exemples qu'il n'a pas vu lors de la
+phase d'apprentissage. On évite ainsi "l'overfitting".
+
+Si on affiche les multiplicateurs de Lagrange $\alpha$ à l'aide de boîtes à
+moustaches, on obtient:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{boxplotsCoefsEx4.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:boxplotsEx4}Boîtes à moustaches des multiplicateurs
+        de Lagrange}
+    \end{center}
+\end{figure}
+
+On peut voir que plus le coût de mauvaise classification est élevé plus les
+$\alpha_i$ sont dispersés, ceci s'explique par le fait que si on augmente le
+paramètre de pénalisation, l'hyperplan résultant aura une marge plus faible et
+la norme de $w$ augmentera ce qui se traduit par des $\alpha_i$ avec de plus
+grandes valeurs en valeur absolue.
+
+Si on affiche le nombre de $\alpha_i$ non nuls en fonction du coût, on obtient:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{notNullCoefsEx4.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:notNullEx4}Nombre de coefficiens $\alpha_i$ non nuls
+        en fonction du paramètre de pénalisation}
+    \end{center}
+\end{figure}
+
+On peut voir que le nombre de coefficients $\alpha_i$ non nuls, qui n'est autre
+que le nombre de vecteurs de support, a tendance à diminuer au fur et à mesure
+que le coût de mauvaise classification augmente. Ceci peut être expliquer par le
+fait que plus le paramètre de pénalisation sera élevé, plus la fonction
+discriminante sera complexe et donc l'hyperplan séparateur délaissera certains
+vecteurs de support au profit d'une meilleure classification.
+
+\subsection{Variation de la largeur de bande $\frac{1}{2 \sigma^2}$ avec un
+noyau gaussien et paramètre de pénalisation $\gamma = \inf$}\label{subsec:ex43}
+
+Ici, on impose $\gamma = \inf$, c'est-à-dire qu'on cherche un modèle qui ne
+commet aucune erreur sur l'ensemble d'apprentissage et, en conséquence, se
+généralisera mal à de nouveaux exemples non déjà présents dans l'ensemble
+d'apprentissage, ceux dans l'ensemble de test, par exemple.
+On fait donc varier la largeur de bande $\frac{1}{2 \sigma^2}$ de
+$10^{-4} \ à \ 10^5$. En pratique, on prend $\gamma = 10^5$.
+
+Si on dessine l'erreur moyenne en fonction de la largeur de bande, on obtient:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{probaErrorEx43.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:probaEx43}Erreur moyenne de classification sur
+        l'ensemble de test en fonction de la largeur de bande}
+    \end{center}
+\end{figure}
+
+On voit que, naturellement, le nombre d'erreurs de classification augmente avec
+la largeur de bande car on se rapproche d'un noyau linéaire alors qu'ici nos
+données ne sont pas linéairement séparables.
+
+Enfin, on affiche le nombre d'exemples ayant des $\alpha_i$ non nuls,
+c'est-à-dire le nombre de vecteurs de support:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{notNullCoefsEx43.png}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{fig:notNullEx43}Nombre de coefficiens $\alpha_i$ non
+            nuls en fonction de la largeur de bande}
+    \end{center}
+\end{figure}
+
+On voit que plus la largeur de bande est grande plus il y a des exemples ayant
+des $\alpha_i$ non nuls. Ceci est normal, car si on agrandit la largeur de bande
+notre modèle se rapproche d'un modèle linéaire et donc le nombre de vecteurs
+de support grandira.
+
+\subsection{Utilisation de la fonction \texttt{tune}}\label{subsec:ex44}
+
+Dans cette partie, on va utiliser la fonction \texttt{tune} qui va trouver la
+meilleure largeur de bande en testant toutes les valeurs qu'on lui propose et
+en choisissant celle où le modèle résultant obtient les meilleures performances
+dans le cas d'un noyau gaussien. Dans le cas d'un noyau polynomial, on proposera
+une liste de valeurs pour les paramètres de largeur de bande, de degré ainsi que
+de coefficient, la fonction \texttt{tune} testera donc toutes les combinaisons
+possibles et nous renverra la combinaison de paramètres qui obtient les
+meilleurs résultats. De plus, on impose le paramètre de pénalisation
+$\gamma = 1$.
+
+Pour ce qui est du noyau gaussien, on obtient les résultats suivants: la
+meilleure largeur de bande, parmi les valeurs proposées (de $10^{-4}$ à $10^5$),
+est égale à $0.1$ et on a la classification suivante:
+
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:gaussEx4}Résultats de classification pour un noyau
+        gaussien}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            class actuelle & \multicolumn{2}{|c|}{classe prédite} \\
+            \hline
+                           & bénin & malin \\
+            \hline
+            bénin & 224 & 5 \\
+                   & 0.749 & 0.017 \\
+            \hline
+            malin & 1 & 69 \\
+                  & 0.003 & 0.231 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+On voit qu'un exemple contenu dans l'ensemble de test a été classifié en tant
+que bénin alors qu'il était malin et cinq exemples ont été classifiés en tant
+que malins alors qu'ils étaient bénins. On a donc une erreur moyenne de
+0.020 sur l'ensemble de test avec ce modèle.
+
+En ce qui concerne le noyau polynomial, nous avions tout d'abord soumis des 
+valeurs de largeur de bande entre $10^{-4}$ et $10^5$, étant donné que la
+fonction \texttt{tune} trouvait $10^{-4}$ en tant que meilleure valeur de
+largeur de bande, nous avons modifié les étendues de nos valeurs. Nous avons
+effectué la même opération pour le paramètre de degré. Finalement, on trouve que
+la meilleure largeur de bande dans les valeurs que nous avions proposées (de
+$10^{-8}$ à $10^4$) est $10^{-5}$, la meilleure valeur de degré est 9 et la
+meilleure valeur de coefficient est 5.
+
+On obtient la table de classification suivante:
+
+\begin{table}[H]
+    \begin{center}
+        \centering
+        \captionsetup{justification=centering}
+        \caption{\label{tab:polyEx4}Résultats de classification pour un noyau
+        polynomial}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            class actuelle & \multicolumn{2}{|c|}{classe prédite} \\
+            \hline
+                           & bénin & malin \\
+            \hline
+            bénin & 226 & 3 \\
+                   & 0.756 & 0.010 \\
+            \hline
+            malin & 1 & 69 \\
+                  & 0.003 & 0.231 \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+On obtient des résultats sensiblement meilleurs qu'avec un noyau gaussien,
+l'erreur moyenne passe de 0.020 pour un noyau gaussien à 0.013 pour un noyau
+polynomial. On peut expliquer ce résultat par la nature des données.
+
+%-------------------------------------------------------------------------------
+
+\section{Conclusion}\label{sec:conclu}
+
+En conclusion, ces séances de travaux pratiques nous auront permis de réellement
+comprendre le fonctionnement des machines à vecteurs de support grâce à de
+nombreux exercices analytiques mais aussi de mettre en pratique ces
+connaissances sur de vraies données grâce au dernier exercice.
+
+Pour ce qui est de l'exercice 4, on aurait pu aller plus loin en calculant la
+précision de notre modèle qui n'est autre que le nombre de vrais positifs
+divisé par la somme du nombre de vrais positifs ainsi que les faux positifs.
+De la même manière, on aurait pu calculer le rappel ainsi que le score F1.
+
+Aussi, étant donné qu'il y a plus de tumeurs bénignes que malines dans le jeu
+de données présenté, on aurait pu utiliser le paramètre \texttt{class.weights}
+de la fonction \texttt{svm} qui permet d'atténuer l'effet que peut avoir la
+classe la plus présente. D'une manière similaire, on aurait pu affecter
+différents coûts aux différentes décision lors de l'apprentissage. En effet,
+prédire une tumeur bénigne alors qu'elle est maline a un coût plus élevé que
+prédire une tumeur maline alors qu'elle est bénigne.
+
+On aurait pu obtenir un meilleur modèle en utilisant la validation croisée dans
+la fonction \texttt{tune} au lieu d'un simple découpage en deux ensembles: un
+pour l'apprentissage et un pour le test.
+
+Enfin, une amélioration possible aurait été de construire un nouveau modèle
+avec l'intégralité des données une fois les paramètres optimaux obtenus par la
+fonction \texttt{tune}.
+
+%-------------------------------------------------------------------------------
+
+\end{multicols}
+\end{document}
